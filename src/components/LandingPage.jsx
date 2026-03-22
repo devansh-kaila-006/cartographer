@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LoadingIcon, CheckIcon } from './Icons'
 import './LandingPage.css'
 
 export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }) {
@@ -40,13 +41,22 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
             </div>
             <div className="loading-steps">
               <div className={`loading-step ${loadingStage === 'fetching' ? 'active' : 'done'}`}>
-                {loadingStage === 'fetching' ? '⏳' : '✓'} Fetching file tree
+                <span className="step-icon">
+                  {loadingStage === 'fetching' ? <LoadingIcon /> : <CheckIcon />}
+                </span>
+                Fetching file tree
               </div>
               <div className={`loading-step ${loadingStage === 'analyzing' ? 'active' : loadingStage === 'fetching' ? '' : 'done'}`}>
-                {loadingStage === 'analyzing' ? '⏳' : loadingStage === 'fetching' ? '' : '✓'} Analyzing structure
+                <span className="step-icon">
+                  {loadingStage === 'analyzing' ? <LoadingIcon /> : loadingStage === 'fetching' ? '' : <CheckIcon />}
+                </span>
+                Analyzing structure
               </div>
               <div className={`loading-step ${loadingStage === 'building' ? 'active' : loadingStage === 'fetching' || loadingStage === 'analyzing' ? '' : 'done'}`}>
-                {loadingStage === 'building' ? '⏳' : loadingStage === 'fetching' || loadingStage === 'analyzing' ? '' : '✓'} Building visualization
+                <span className="step-icon">
+                  {loadingStage === 'building' ? <LoadingIcon /> : loadingStage === 'fetching' || loadingStage === 'analyzing' ? '' : <CheckIcon />}
+                </span>
+                Building visualization
               </div>
             </div>
           </div>

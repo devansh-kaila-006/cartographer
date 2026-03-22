@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { IcicleIcon, SunburstIcon, ChordIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon } from './Icons'
 import './TopBar.css'
 
 export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const views = [
-    { id: 'icicle', label: 'Icicle', icon: '📊' },
-    { id: 'sunburst', label: 'Sunburst', icon: '☀️' },
-    { id: 'chord', label: 'Chord', icon: '🔗' }
+    { id: 'icicle', label: 'Icicle', icon: <IcicleIcon /> },
+    { id: 'sunburst', label: 'Sunburst', icon: <SunburstIcon /> },
+    { id: 'chord', label: 'Chord', icon: <ChordIcon /> }
   ]
 
   return (
@@ -43,7 +44,7 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
           onClick={onReset}
           title="Load new repository"
         >
-          <span className="action-icon">🔄</span>
+          <span className="action-icon"><RefreshIcon /></span>
           <span className="action-label">Load New</span>
         </button>
 
@@ -53,7 +54,7 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
             onClick={() => setShowDropdown(!showDropdown)}
             title="Settings"
           >
-            <span className="action-icon">⚙️</span>
+            <span className="action-icon"><SettingsIcon /></span>
           </button>
 
           {showDropdown && (
@@ -65,7 +66,7 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
                   setShowDropdown(false)
                 }}
               >
-                <span>🔑</span>
+                <span><KeyIcon /></span>
                 <span>API Keys</span>
               </button>
               <button
@@ -75,7 +76,7 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
                   setShowDropdown(false)
                 }}
               >
-                <span>🔊</span>
+                <span><AudioIcon /></span>
                 <span>Audio</span>
               </button>
             </div>

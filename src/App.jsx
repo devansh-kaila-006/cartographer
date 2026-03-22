@@ -1,11 +1,16 @@
 import { useState } from 'react'
 import { LandingPage } from './components/LandingPage'
+import { TopBar } from './components/TopBar'
+import { LeftSidebar } from './components/LeftSidebar'
+import { VisualizationArea } from './components/VisualizationArea'
 
 function App() {
   const [repoInfo, setRepoInfo] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState('fetching')
+  const [currentView, setCurrentView] = useState('icicle')
+  const [selectedFile, setSelectedFile] = useState(null)
 
   // Handle repository loading from landing page
   const handleLoadRepo = async (owner, repo) => {
@@ -50,6 +55,25 @@ function App() {
   // Handle reset
   const handleReset = () => {
     setRepoInfo(null)
+    setSelectedFile(null)
+    setCurrentView('icicle')
+  }
+
+  // Handle view change
+  const handleViewChange = (view) => {
+    setCurrentView(view)
+  }
+
+  // Handle file click
+  const handleFileClick = (file) => {
+    setSelectedFile(file)
+    console.log('Selected file:', file)
+  }
+
+  // Handle settings
+  const handleOpenSettings = () => {
+    // TODO: Implement settings modal
+    alert('Settings coming soon!')
   }
 
   return (
@@ -66,15 +90,23 @@ function App() {
 
       {/* Main App - shown when repo is loaded */}
       {repoInfo && (
-        <div className="main-app">
-          <div className="placeholder">
-            <h1>{repoInfo.owner}/{repoInfo.repo}</h1>
-            <p>Repository loaded! Visualization coming in Phase 2...</p>
-            <button className="btn btn-primary" onClick={handleReset}>
-              Load New Repository
-            </button>
-          </div>
-        </div>
+        <>
+          <TopBar
+            repoInfo={repoInfo}
+            currentView={currentView}
+            onViewChange={handleViewChange}
+            onReset={handleReset}
+            onOpenSettings={handleOpenSettings}
+          />
+
+          <LeftSidebar
+            files={[]}
+            onFileClick={handleFileClick}
+            selectedFile={selectedFile}
+          />
+
+          <VisualizationArea currentView={currentView} />
+        </>
       )}
     </>
   )

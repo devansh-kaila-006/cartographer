@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { ChevronRightIcon, ChevronDownIcon, SearchIcon, JavaScriptIcon, CSSIcon, JSONIcon, FileIcon } from './Icons'
 import './LeftSidebar.css'
 
 export function LeftSidebar({ files, onFileClick, selectedFile }) {
@@ -71,23 +72,20 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
 
   // Get file icon based on language/extension
   const getFileIcon = (file) => {
-    if (!file) return '📄'
+    if (!file) return <FileIcon />
 
     const ext = file.name.split('.').pop().toLowerCase()
-    const icons = {
-      'jsx': '⚛️',
-      'js': '⚛️',
-      'tsx': '⚛️',
-      'ts': '⚛️',
-      'css': '🎨',
-      'html': '🌐',
-      'json': '📋',
-      'md': '📝',
-      'py': '🐍',
-      'go': '🐹',
-      'rs': '🦀',
+    const iconMap = {
+      'jsx': <JavaScriptIcon />,
+      'js': <JavaScriptIcon />,
+      'tsx': <JavaScriptIcon />,
+      'ts': <JavaScriptIcon />,
+      'css': <CSSIcon />,
+      'html': <FileIcon />,
+      'json': <JSONIcon />,
+      'md': <FileIcon />,
     }
-    return icons[ext] || '📄'
+    return iconMap[ext] || <FileIcon />
   }
 
   // Render tree items recursively
@@ -112,7 +110,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
                 onClick={() => toggleFolder(item.path)}
               >
                 <span className="folder-icon">
-                  {isCollapsed ? '▶' : '▼'}
+                  {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
                 </span>
                 <span className="folder-name">{item.name}</span>
               </div>
@@ -152,7 +150,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
       <div className="sidebar-tree">
         {filteredFiles.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">🔍</span>
+            <span className="empty-icon"><SearchIcon /></span>
             <span className="empty-text">No files found</span>
           </div>
         ) : (

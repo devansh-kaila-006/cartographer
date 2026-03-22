@@ -208,6 +208,13 @@
   font-weight: 500;
 }
 
+.step-icon {
+  display: flex;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+}
+
 .loading-step.active {
   color: var(--accent);
 }
