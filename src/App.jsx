@@ -12,18 +12,16 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState('fetching')
-  const [currentView, setCurrentView] = useState('icicle')
+  const [currentView, setCurrentView] = useState('sunburst')
   const [selectedFile, setSelectedFile] = useState(null)
   const [summaries, setSummaries] = useState(new Map())
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
   const [files, setFiles] = useState([])
   const [showSettings, setShowSettings] = useState(false)
   const [apiKeys, setApiKeys] = useState({
-    claude: '',
-    openai: '',
     gemini: ''
   })
-  const [selectedProvider, setSelectedProvider] = useState('claude')
+  const [selectedProvider, setSelectedProvider] = useState('gemini')
 
   // Load API keys from localStorage on mount
   useEffect(() => {
@@ -91,7 +89,7 @@ function App() {
   const handleReset = () => {
     setRepoInfo(null)
     setSelectedFile(null)
-    setCurrentView('icicle')
+    setCurrentView('sunburst')
     setSummaries(new Map())
     setFiles([])
   }
@@ -115,7 +113,7 @@ function App() {
   const handleGenerateSummary = async (file) => {
     if (!file) return
 
-    const apiKey = apiKeys[selectedProvider]
+    const apiKey = apiKeys.gemini
     if (!apiKey) {
       setShowSettings(true)
       return
@@ -124,16 +122,7 @@ function App() {
     setIsGeneratingSummary(true)
 
     try {
-      let summary = ''
-
-      if (selectedProvider === 'claude') {
-        summary = await generateClaudeSummary(file, apiKey)
-      } else if (selectedProvider === 'openai') {
-        summary = await generateOpenAISummary(file, apiKey)
-      } else if (selectedProvider === 'gemini') {
-        summary = await generateGeminiSummary(file, apiKey)
-      }
-
+      const summary = await generateGeminiSummary(file, apiKey)
       setSummaries(prev => new Map(prev).set(file.path, summary))
     } catch (error) {
       console.error('Failed to generate summary:', error)
@@ -143,85 +132,37 @@ function App() {
     }
   }
 
-  // Generate summary using Claude API
-  const generateClaudeSummary = async (file, apiKey) => {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
-        }]
-      })
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'Claude API error')
-    }
-
-    const data = await response.json()
-    return data.content[0].text
-  }
-
-  // Generate summary using OpenAI API
-  const generateOpenAISummary = async (file, apiKey) => {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
-        }]
-      })
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'OpenAI API error')
-    }
-
-    const data = await response.json()
-    return data.choices[0].message.content
-  }
-
   // Generate summary using Gemini API
   const generateGeminiSummary = async (file, apiKey) => {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
-          }]
-        }]
-      })
-    })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Provide a brief 2–3 sentence summary of what this file does in a codebase.\n\nFile: ${file.path}\nLanguage: ${file.language || "unknown"}\n\nCode:\n${file.content || ""}`
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error?.message || 'Gemini API error')
+      const error = await response.json();
+      throw new Error(error?.error?.message || `Gemini API error: ${response.status}`);
     }
 
-    const data = await response.json()
-    return data.candidates[0].content.parts[0].text
-  }
+    const data = await response.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No summary returned";
+  };
 
   // Handle settings
   const handleOpenSettings = () => {
@@ -281,7 +222,7 @@ function App() {
             summary={selectedFile ? summaries.get(selectedFile.path) : null}
             isGenerating={isGeneratingSummary}
             repoInfo={repoInfo}
-            hasApiKey={!!apiKeys[selectedProvider]}
+            hasApiKey={!!apiKeys.gemini}
           />
         </>
       )}

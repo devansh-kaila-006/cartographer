@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { IcicleIcon, SunburstIcon, ChordIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon } from './Icons'
+import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon } from './Icons'
 import './TopBar.css'
 
-export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings }) {
+export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const views = [
-    { id: 'icicle', label: 'Icicle', icon: <IcicleIcon /> },
     { id: 'sunburst', label: 'Sunburst', icon: <SunburstIcon /> },
-    { id: 'chord', label: 'Chord', icon: <ChordIcon /> }
+    { id: 'chord', label: 'Chord', icon: <ChordIcon /> },
+    { id: 'grid', label: 'Grid', icon: <GridIcon /> }
   ]
 
   return (
@@ -72,7 +72,7 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
               <button
                 className="dropdown-item"
                 onClick={() => {
-                  // TODO: Implement audio settings
+                  onOpenAudioSettings()
                   setShowDropdown(false)
                 }}
               >

@@ -1,5 +1,5 @@
-import { IcicleIcon, SunburstIcon, ChordIcon } from './Icons'
-import { useState, useRef } from 'react'
+import { SunburstIcon, ChordIcon, GridIcon } from './Icons'
+import { useState, useRef, useEffect } from 'react'
 import './VisualizationArea.css'
 
 export function VisualizationArea({ currentView, files, onFileClick }) {
@@ -9,6 +9,12 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [expandedDirs, setExpandedDirs] = useState(new Set())
   const svgRef = useRef(null)
+
+  // Reset zoom and pan when switching views
+  useEffect(() => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }, [currentView])
 
   const handleNodeClick = (file) => {
     if (onFileClick && file) {
@@ -106,124 +112,102 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
 
   const fileTree = buildFileTree(files || [])
 
-  // Icicle Visualization
+  // Grid Heatmap Visualization - Improved
   const renderIcicle = () => {
-    const getDirColor = (depth) => {
-      const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+    const getFileColor = (language) => {
+      const colors = {
+        'javascript': '#f59e0b',
+        'jsx': '#0ea5e9',
+        'typescript': '#3b82f6',
+        'tsx': '#0ea5e9',
+        'css': '#8b5cf6',
+        'html': '#f97316',
+        'json': '#10b981',
+        'markdown': '#64748b',
+        'md': '#64748b',
+        'python': '#eab308',
+        'rust': '#ef4444',
+        'go': '#06b6d4'
+      }
+      return colors[language] || '#6b7280'
+    }
+
+    const getFolderColor = (depth) => {
+      const colors = ['#1e3a8a', '#1e40af', '#134e4a', '#065f46', '#854d0e', '#7e22ce']
       return colors[depth % colors.length]
     }
 
-    const getFileColor = (language) => {
-      const colors = {
-        'javascript': '#fbbf24', 'jsx': '#38bdf8', 'typescript': '#3b82f6', 'tsx': '#38bdf8',
-        'css': '#8b5cf6', 'html': '#f97316', 'json': '#94a3b8', 'markdown': '#64748b',
-        'python': '#eab308', 'rust': '#ef4444'
+    // Group files by folder
+    const groupByFolder = (node) => {
+      const folders = []
+
+      const processNode = (currentNode, depth = 0) => {
+        if (currentNode.children && currentNode.children.length > 0) {
+          currentNode.children.forEach(child => {
+            processNode(child, depth + 1)
+          })
+        }
+
+        if (currentNode.files && currentNode.files.length > 0) {
+          folders.push({
+            path: currentNode.path || currentNode.name,
+            name: currentNode.name,
+            files: currentNode.files,
+            depth: depth
+          })
+        }
       }
-      return colors[language] || '#64748b'
+
+      processNode(node)
+      return folders
     }
 
-    const renderNode = (node, x, y, width, height, depth = 0) => {
-      if (!node || width < 1 || height < 1) return null
+    const folders = groupByFolder(fileTree)
 
-      const elements = []
-      const totalItems = node.children.length + node.files.length
+    // Flatten all files with folder context
+    const allFiles = folders.flatMap(folder =>
+      folder.files.map(file => ({
+        ...file,
+        folderName: folder.name,
+        folderPath: folder.path
+      }))
+    )
 
-      if (totalItems === 0) return null
+    // Calculate sizes
+    const maxSize = Math.max(...allFiles.map(f => f.size || 1000))
+    const minSize = Math.min(...allFiles.map(f => f.size || 1000))
 
-      const itemHeight = Math.max(height / totalItems, 2)
-      const gap = 1
+    // Grid configuration - INCREASED SIZES
+    const baseCellSize = 140 // Increased from 100
+    const gap = 8 // Increased from 6
+    const padding = 30 // Increased from 20
+    const gridCols = Math.ceil(Math.sqrt(allFiles.length))
+    const totalWidth = gridCols * (baseCellSize + gap) + padding * 2
+    const totalHeight = Math.ceil(allFiles.length / gridCols) * (baseCellSize + gap) + padding * 2
 
-      // Render directories
-      node.children.forEach((child, index) => {
-        const childY = y + (index * itemHeight)
-        const childHeight = Math.max(itemHeight - gap, 1)
+    // Calculate cell size with better distribution
+    const getCellSize = (fileSize) => {
+      if (maxSize === minSize) return baseCellSize * 0.5
+      const logSize = Math.log2(fileSize - minSize + 1)
+      const logMax = Math.log2(maxSize - minSize + 1)
+      const normalized = logSize / logMax
+      return baseCellSize * (0.35 + normalized * 0.65)
+    }
 
-        elements.push(
-          <g key={`dir-${child.path || child.name}-${depth}`}>
-            <rect
-              x={x}
-              y={childY}
-              width={width}
-              height={childHeight}
-              fill={getDirColor(depth)}
-              className="icicle-rect-dir"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleNodeClick(child)
-              }}
-            />
-            {childHeight > 14 && width > 30 && (
-              <text
-                x={x + 8}
-                y={childY + childHeight / 2}
-                fill="white"
-                fontSize="12"
-                fontWeight="600"
-                dominantBaseline="middle"
-                className="icicle-text"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleNodeClick(child)
-                }}
-              >
-                {child.name}
-              </text>
-            )}
-          </g>
-        )
-
-        const childElements = renderNode(child, x, childY, width, childHeight, depth + 1)
-        if (childElements) elements.push(childElements)
-      })
-
-      // Render files
-      node.files.forEach((file, index) => {
-        const fileY = y + ((node.children.length + index) * itemHeight)
-        const fileHeight = Math.max(itemHeight - gap, 1)
-
-        elements.push(
-          <g key={`file-${file.path}`}>
-            <rect
-              x={x}
-              y={fileY}
-              width={width}
-              height={fileHeight}
-              fill={getFileColor(file.language)}
-              className="icicle-rect-file"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleNodeClick(file)
-              }}
-            />
-            {fileHeight > 14 && width > 30 && (
-              <text
-                x={x + 8}
-                y={fileY + fileHeight / 2}
-                fill="white"
-                fontSize="11"
-                dominantBaseline="middle"
-                className="icicle-text"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleNodeClick(file)
-                }}
-              >
-                {file.name}
-              </text>
-            )}
-          </g>
-        )
-      })
-
-      return elements
+    // Format file size
+    const formatSize = (bytes) => {
+      if (!bytes) return '0 B'
+      if (bytes < 1024) return `${bytes} B`
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     }
 
     return (
       <svg
         width="100%"
         height="100%"
-        viewBox="0 0 1200 800"
-        className="icicle-chart"
+        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        className="heatmap-chart"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -233,14 +217,95 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <style>{`
-          .icicle-rect-file { transition: opacity 0.2s; cursor: pointer; }
-          .icicle-rect-file:hover { opacity: 0.7; stroke: white; stroke-width: 2px; }
-          .icicle-rect-dir { transition: opacity 0.2s; cursor: pointer; }
-          .icicle-rect-dir:hover { opacity: 0.8; }
-          .icicle-text { pointer-events: none; font-family: -apple-system, sans-serif; cursor: pointer; }
+          .heatmap-cell { transition: all 0.2s ease; cursor: pointer; }
+          .heatmap-cell:hover rect { filter: brightness(1.15); stroke: white; stroke-width: 2px; }
+          .heatmap-cell:hover text { opacity: 1; }
+          .heatmap-bg { fill: #1e293b; opacity: 0.3; }
+          .heatmap-text { pointer-events: none; font-family: -apple-system, sans-serif; font-weight: 500; }
+          .heatmap-folder { font-size: 11px; fill: #94a3b8; }
+          .heatmap-size { font-size: 10px; fill: #64748b; }
         `}</style>
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-          {renderNode(fileTree, 0, 0, 1200, 800)}
+          {allFiles.map((file, index) => {
+            const col = index % gridCols
+            const row = Math.floor(index / gridCols)
+            const x = padding + col * (baseCellSize + gap)
+            const y = padding + row * (baseCellSize + gap)
+
+            const cellSize = getCellSize(file.size || 1000)
+            const offset = (baseCellSize - cellSize) / 2
+
+            const showLabel = cellSize > 50
+            const showInfo = cellSize > 70
+
+            return (
+              <g key={file.path} className="heatmap-cell">
+                {/* Background cell */}
+                <rect
+                  x={x}
+                  y={y}
+                  width={baseCellSize}
+                  height={baseCellSize}
+                  className="heatmap-bg"
+                  rx="8"
+                />
+
+                {/* Colored file cell */}
+                <rect
+                  x={x + offset}
+                  y={y + offset}
+                  width={cellSize}
+                  height={cellSize}
+                  rx={Math.max(4, cellSize * 0.12)}
+                  fill={getFileColor(file.language)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleNodeClick(file)
+                  }}
+                />
+
+                {/* File name */}
+                {showLabel && cellSize > 55 && (
+                  <text
+                    x={x + baseCellSize / 2}
+                    y={y + baseCellSize / 2 - (showInfo ? 6 : 0)}
+                    fill="white"
+                    fontSize={Math.min(12, cellSize / 5)}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="heatmap-text"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}
+                  >
+                    {file.name.length > 14 ? file.name.substring(0, 14) + '…' : file.name}
+                  </text>
+                )}
+
+                {/* Folder name */}
+                {showInfo && cellSize > 80 && (
+                  <text
+                    x={x + baseCellSize / 2}
+                    y={y + baseCellSize / 2 + 14}
+                    className="heatmap-text heatmap-folder"
+                    textAnchor="middle"
+                  >
+                    {file.folderName.length > 18 ? file.folderName.substring(0, 18) + '…' : file.folderName}
+                  </text>
+                )}
+
+                {/* File size */}
+                {showInfo && cellSize > 100 && (
+                  <text
+                    x={x + baseCellSize / 2}
+                    y={y + baseCellSize / 2 + 28}
+                    className="heatmap-text heatmap-size"
+                    textAnchor="middle"
+                  >
+                    {formatSize(file.size)}
+                  </text>
+                )}
+              </g>
+            )
+          })}
         </g>
       </svg>
     )
@@ -493,6 +558,15 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
     const directories = groupFilesByDirectory(files || [])
     const dirCount = directories.length
 
+    // Calculate radius for the circle - make it much larger to spread nodes out
+    const maxRadius = 380 // Maximum radius that fits in the canvas
+    const minRadius = 150 // Minimum radius for small repos
+    const targetRadius = 120 + (dirCount * 25) // 25px per folder - very aggressive spacing
+    const radius = Math.min(maxRadius, Math.max(minRadius, targetRadius))
+
+    // Keep label offset simple and constant
+    const labelOffset = 45
+
     // Simple professional color palette (only 6 colors)
     const getDirColor = (index) => {
       const colors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed']
@@ -505,7 +579,6 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
     // Create nodes
     const createNodes = () => {
       const nodes = []
-      const radius = Math.min(200, Math.max(120, 14000 / (dirCount + 10)))
       const centerX = 400
       const centerY = 300
 
@@ -523,7 +596,8 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
         // Add files if expanded
         if (expandedDirs.has(dir.path)) {
           const fileCount = Math.min(dir.files.length, 5)
-          const innerRadius = radius - 45
+          // Scale inner radius based on main radius
+          const innerRadius = radius - (radius * 0.2) // 20% of radius inward
 
           dir.files.slice(0, fileCount).forEach((file, fileIndex) => {
             const offsetAngle = ((fileIndex - (fileCount - 1) / 2)) * 0.18
@@ -574,11 +648,19 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
             const isSibling = dirA.path.split('/').slice(0, -1).join('/') === dirB.path.split('/').slice(0, -1).join('/')
 
             if ((isParentChild || isSibling) && dirA.path !== dirB.path) {
+              // Find the original index of these directories to get their colors
+              const dirAIndex = directories.findIndex(d => d.path === dirA.path)
+              const dirBIndex = directories.findIndex(d => d.path === dirB.path)
+              const colorA = getDirColor(dirAIndex)
+              const colorB = getDirColor(dirBIndex)
+
               connections.push({
                 x1: nodeA.x,
                 y1: nodeA.y,
                 x2: nodeB.x,
-                y2: nodeB.y
+                y2: nodeB.y,
+                color: colorA,
+                colorEnd: colorB
               })
             }
           }
@@ -603,6 +685,16 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+          {/* Define gradients for connections */}
+          <defs>
+            {connections.map((conn, i) => (
+              <linearGradient key={i} id={`gradient-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={conn.color} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={conn.colorEnd || conn.color} stopOpacity="0.4" />
+              </linearGradient>
+            ))}
+          </defs>
+
           {/* Connections */}
           {connections.map((conn, i) => (
             <line
@@ -611,9 +703,8 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
               y1={conn.y1}
               x2={conn.x2}
               y2={conn.y2}
-              stroke="#64748b"
-              strokeWidth="1"
-              opacity="0.3"
+              stroke={`url(#gradient-${i})`}
+              strokeWidth="1.5"
             />
           ))}
 
@@ -656,8 +747,8 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
 
                   {/* Directory name on outer side */}
                   <text
-                    x={node.x + Math.cos(node.angle) * 35}
-                    y={node.y + Math.sin(node.angle) * 35}
+                    x={node.x + Math.cos(node.angle) * labelOffset}
+                    y={node.y + Math.sin(node.angle) * labelOffset}
                     fill="rgba(255,255,255,0.8)"
                     fontSize="9"
                     fontWeight="500"
@@ -726,27 +817,39 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
   }
 
   const viewConfig = {
-    icicle: {
-      icon: <IcicleIcon />,
-      title: 'Icicle View',
-      description: 'Vertical hierarchical visualization',
-      render: renderIcicle
+    grid: {
+      icon: <GridIcon />,
+      title: 'Grid Heatmap',
+      description: 'File size grid visualization',
+      render: renderIcicle,
+      instructions: {
+        what: 'Displays all files in a grid layout where cell size represents file size. Larger cells indicate bigger files.',
+        how: '• Click any cell to view file details\n• Scroll or use +/- buttons to zoom\n• Drag to pan around the grid\n• Colors indicate programming language'
+      }
     },
     sunburst: {
       icon: <SunburstIcon />,
       title: 'Sunburst View',
       description: 'Radial hierarchical visualization',
-      render: renderSunburst
+      render: renderSunburst,
+      instructions: {
+        what: 'Shows repository structure as nested concentric rings. Inner rings are top-level folders, outer rings are deeper files.',
+        how: '• Click folders to expand/collapse in the file tree\n• Scroll or use +/- buttons to zoom\n• Drag to pan around the visualization\n• Colors represent different directory branches'
+      }
     },
     chord: {
       icon: <ChordIcon />,
       title: 'Directory Relations',
       description: 'Directory dependencies • Click to expand',
-      render: renderChord
+      render: renderChord,
+      instructions: {
+        what: 'Displays directories as nodes in a circle, with colored connections showing parent-child and sibling relationships.',
+        how: '• Click directory nodes to expand their files (max 5 shown)\n• Scroll or use +/- buttons to zoom\n• Drag to pan around the diagram\n• Connection colors fade from one directory to another'
+      }
     }
   }
 
-  const config = viewConfig[currentView] || viewConfig.icicle
+  const config = viewConfig[currentView] || viewConfig.grid
 
   return (
     <div className="visualization-area">
@@ -759,6 +862,24 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
         <div className="visualization-content">
           {config.render()}
         </div>
+
+        {/* Visualization Info Box */}
+        {config.instructions && (
+          <div className="visualization-info-box">
+            <div className="info-box-header">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="info-box-title">What is this?</span>
+            </div>
+            <p className="info-box-what">{config.instructions.what}</p>
+            <div className="info-box-how-section">
+              <span className="info-box-how-title">How to use:</span>
+              <pre className="info-box-how">{config.instructions.how}</pre>
+            </div>
+          </div>
+        )}
 
         {/* Zoom Controls */}
         <div className="zoom-controls">

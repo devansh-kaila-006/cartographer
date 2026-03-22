@@ -1,14 +1,12 @@
 import React from 'react'
 
 // View Icons
-export const IcicleIcon = () => (
+export const GridIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="14" height="2" rx="0.5" fill="currentColor"/>
-    <rect x="1" y="4" width="10" height="2" rx="0.5" fill="currentColor"/>
-    <rect x="1" y="7" width="6" height="2" rx="0.5" fill="currentColor"/>
-    <rect x="1" y="10" width="3" height="2" rx="0.5" fill="currentColor"/>
-    <rect x="6" y="7" width="3" height="2" rx="0.5" fill="currentColor"/>
-    <rect x="11" y="4" width="4" height="2" rx="0.5" fill="currentColor"/>
+    <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/>
+    <rect x="10" y="1" width="5" height="5" rx="1" fill="currentColor"/>
+    <rect x="1" y="10" width="5" height="5" rx="1" fill="currentColor"/>
+    <rect x="10" y="10" width="5" height="5" rx="1" fill="currentColor" fillOpacity="0.5"/>
   </svg>
 )
 

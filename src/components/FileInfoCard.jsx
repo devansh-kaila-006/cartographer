@@ -100,7 +100,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
         <div className="summary-section">
           <div className="summary-header">
             <span className="summary-icon">AI</span>
-            <span className="summary-title">AI Analysis</span>
+            <span className="summary-title">Gemini Analysis</span>
           </div>
           <p className="summary-text">{summary}</p>
         </div>
@@ -114,8 +114,8 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
               </svg>
             </span>
             <div className="no-api-key-text">
-              <p className="no-api-key-title">No API Key Configured</p>
-              <p className="no-api-key-desc">Add an API key to generate AI summaries</p>
+              <p className="no-api-key-title">No Gemini API Key</p>
+              <p className="no-api-key-desc">Add your Google Gemini API key to generate summaries</p>
             </div>
           </div>
           <button
@@ -132,7 +132,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
           onClick={handleGenerateSummary}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generating...' : 'Generate AI Summary'}
+          {isGenerating ? 'Generating...' : 'Generate Gemini Summary'}
         </button>
       )}
 

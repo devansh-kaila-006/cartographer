@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronRightIcon, ChevronDownIcon, SearchIcon, JavaScriptIcon, CSSIcon, JSONIcon, FileIcon } from './Icons'
 import './LeftSidebar.css'
 
@@ -8,6 +8,16 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
 
   // Filter to only show files, not folders (folders are created from paths)
   const displayFiles = files ? files.filter(f => f.type !== 'folder') : []
+
+  // Filter files by search query
+  const filteredFiles = useMemo(() => {
+    if (!searchQuery) return displayFiles
+
+    const query = searchQuery.toLowerCase()
+    return displayFiles.filter(file =>
+      file.path.toLowerCase().includes(query)
+    )
+  }, [displayFiles, searchQuery])
 
   // Build file tree structure
   const fileTree = useMemo(() => {
@@ -37,18 +47,8 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
     return tree
   }, [filteredFiles])
 
-  // Filter files by search query
-  const filteredFiles = useMemo(() => {
-    if (!searchQuery) return displayFiles
-
-    const query = searchQuery.toLowerCase()
-    return displayFiles.filter(file =>
-      file.path.toLowerCase().includes(query)
-    )
-  }, [displayFiles, searchQuery])
-
   // Auto-expand folders when searching
-  useMemo(() => {
+  useEffect(() => {
     if (searchQuery) {
       // Expand all folders that contain matching files
       const pathsToExpand = new Set()
@@ -63,8 +63,11 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
         pathsToExpand.forEach(path => newSet.delete(path))
         return newSet
       })
+    } else {
+      // Collapse all when search is cleared
+      setCollapsedFolders(new Set())
     }
-  }, [searchQuery, filteredFiles])
+  }, [searchQuery])
 
   // Toggle folder collapse
   const toggleFolder = (path) => {
