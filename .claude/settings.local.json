@@ -6,7 +6,11 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(cd:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(npm start:*)",
+      "Bash(node -e \"console.log\\(''Testing imports...''\\); try { require\\(''./src/components/TopBar.jsx''\\); console.log\\(''TopBar OK''\\); } catch\\(e\\) { console.error\\(''TopBar Error:'', e.message\\); }\")",
+      "Bash(grep -E \"\\\\.md$|^src/components/\\(TopBar|LeftSidebar|BottomBar|Tutorial|Tooltip\\)\")"
     ]
   }
 }
