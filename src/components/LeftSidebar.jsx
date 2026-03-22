@@ -6,24 +6,14 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedFolders, setCollapsedFolders] = useState(new Set())
 
-  // Mock file data for now
-  const mockFiles = [
-    { path: 'src/App.jsx', name: 'App.jsx', type: 'file', language: 'jsx' },
-    { path: 'src/main.jsx', name: 'main.jsx', type: 'file', language: 'jsx' },
-    { path: 'src/components/LandingPage.jsx', name: 'LandingPage.jsx', type: 'file', language: 'jsx' },
-    { path: 'src/components/TopBar.jsx', name: 'TopBar.jsx', type: 'file', language: 'jsx' },
-    { path: 'src/styles/index.css', name: 'index.css', type: 'file', language: 'css' },
-    { path: 'src/styles/linear.css', name: 'linear.css', type: 'file', language: 'css' },
-    { path: 'package.json', name: 'package.json', type: 'file', language: 'json' },
-  ]
-
-  const displayFiles = files || mockFiles
+  // Filter to only show files, not folders (folders are created from paths)
+  const displayFiles = files ? files.filter(f => f.type !== 'folder') : []
 
   // Build file tree structure
   const fileTree = useMemo(() => {
     const tree = {}
 
-    displayFiles.forEach(file => {
+    filteredFiles.forEach(file => {
       const parts = file.path.split('/')
       let current = tree
 
@@ -45,7 +35,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
     })
 
     return tree
-  }, [displayFiles])
+  }, [filteredFiles])
 
   // Filter files by search query
   const filteredFiles = useMemo(() => {
@@ -56,6 +46,25 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
       file.path.toLowerCase().includes(query)
     )
   }, [displayFiles, searchQuery])
+
+  // Auto-expand folders when searching
+  useMemo(() => {
+    if (searchQuery) {
+      // Expand all folders that contain matching files
+      const pathsToExpand = new Set()
+      filteredFiles.forEach(file => {
+        const parts = file.path.split('/')
+        for (let i = 1; i < parts.length; i++) {
+          pathsToExpand.add(parts.slice(0, i).join('/'))
+        }
+      })
+      setCollapsedFolders(prev => {
+        const newSet = new Set(prev)
+        pathsToExpand.forEach(path => newSet.delete(path))
+        return newSet
+      })
+    }
+  }, [searchQuery, filteredFiles])
 
   // Toggle folder collapse
   const toggleFolder = (path) => {

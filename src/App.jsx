@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LandingPage } from './components/LandingPage'
 import { TopBar } from './components/TopBar'
 import { LeftSidebar } from './components/LeftSidebar'
 import { VisualizationArea } from './components/VisualizationArea'
+import { FileInfoCard } from './components/FileInfoCard'
+import { SettingsModal } from './components/SettingsModal'
+import { githubAPI } from './api/github'
 
 function App() {
   const [repoInfo, setRepoInfo] = useState(null)
@@ -11,6 +14,39 @@ function App() {
   const [loadingStage, setLoadingStage] = useState('fetching')
   const [currentView, setCurrentView] = useState('icicle')
   const [selectedFile, setSelectedFile] = useState(null)
+  const [summaries, setSummaries] = useState(new Map())
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
+  const [files, setFiles] = useState([])
+  const [showSettings, setShowSettings] = useState(false)
+  const [apiKeys, setApiKeys] = useState({
+    claude: '',
+    openai: '',
+    gemini: ''
+  })
+  const [selectedProvider, setSelectedProvider] = useState('claude')
+
+  // Load API keys from localStorage on mount
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('cartographer_api_keys')
+    const savedProvider = localStorage.getItem('cartographer_ai_provider')
+
+    if (savedKeys) {
+      setApiKeys(JSON.parse(savedKeys))
+    }
+    if (savedProvider) {
+      setSelectedProvider(savedProvider)
+    }
+  }, [])
+
+  // Save API keys to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('cartographer_api_keys', JSON.stringify(apiKeys))
+  }, [apiKeys])
+
+  // Save selected provider to localStorage
+  useEffect(() => {
+    localStorage.setItem('cartographer_ai_provider', selectedProvider)
+  }, [selectedProvider])
 
   // Handle repository loading from landing page
   const handleLoadRepo = async (owner, repo) => {
@@ -19,11 +55,9 @@ function App() {
     setLoadingStage('fetching')
 
     try {
-      // Step 1: Fetch file tree
+      // Step 1: Fetch file tree from GitHub
       setLoadingProgress(20)
-
-      // TODO: Implement actual GitHub API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const files = await githubAPI.getFileTree(owner, repo)
 
       // Step 2: Analyze structure
       setLoadingProgress(60)
@@ -39,6 +73,7 @@ function App() {
 
       // Update state
       setRepoInfo({ owner, repo })
+      setFiles(files)
 
       // Complete
       setLoadingProgress(100)
@@ -57,6 +92,8 @@ function App() {
     setRepoInfo(null)
     setSelectedFile(null)
     setCurrentView('icicle')
+    setSummaries(new Map())
+    setFiles([])
   }
 
   // Handle view change
@@ -67,13 +104,138 @@ function App() {
   // Handle file click
   const handleFileClick = (file) => {
     setSelectedFile(file)
-    console.log('Selected file:', file)
+  }
+
+  // Handle close file info card
+  const handleCloseCard = () => {
+    setSelectedFile(null)
+  }
+
+  // Handle generate AI summary
+  const handleGenerateSummary = async (file) => {
+    if (!file) return
+
+    const apiKey = apiKeys[selectedProvider]
+    if (!apiKey) {
+      setShowSettings(true)
+      return
+    }
+
+    setIsGeneratingSummary(true)
+
+    try {
+      let summary = ''
+
+      if (selectedProvider === 'claude') {
+        summary = await generateClaudeSummary(file, apiKey)
+      } else if (selectedProvider === 'openai') {
+        summary = await generateOpenAISummary(file, apiKey)
+      } else if (selectedProvider === 'gemini') {
+        summary = await generateGeminiSummary(file, apiKey)
+      }
+
+      setSummaries(prev => new Map(prev).set(file.path, summary))
+    } catch (error) {
+      console.error('Failed to generate summary:', error)
+      alert(`Failed to generate AI summary: ${error.message}`)
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
+
+  // Generate summary using Claude API
+  const generateClaudeSummary = async (file, apiKey) => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
+        }]
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'Claude API error')
+    }
+
+    const data = await response.json()
+    return data.content[0].text
+  }
+
+  // Generate summary using OpenAI API
+  const generateOpenAISummary = async (file, apiKey) => {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
+        }]
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'OpenAI API error')
+    }
+
+    const data = await response.json()
+    return data.choices[0].message.content
+  }
+
+  // Generate summary using Gemini API
+  const generateGeminiSummary = async (file, apiKey) => {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Provide a brief 2-3 sentence summary of what this file does in a codebase. File: ${file.path} (${file.language || 'unknown'})`
+          }]
+        }]
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'Gemini API error')
+    }
+
+    const data = await response.json()
+    return data.candidates[0].content.parts[0].text
   }
 
   // Handle settings
   const handleOpenSettings = () => {
-    // TODO: Implement settings modal
-    alert('Settings coming soon!')
+    setShowSettings(true)
+  }
+
+  const handleCloseSettings = () => {
+    setShowSettings(false)
+  }
+
+  const handleSaveSettings = (keys, provider) => {
+    setApiKeys(keys)
+    setSelectedProvider(provider)
+    setShowSettings(false)
   }
 
   return (
@@ -100,13 +262,38 @@ function App() {
           />
 
           <LeftSidebar
-            files={[]}
+            files={files}
             onFileClick={handleFileClick}
             selectedFile={selectedFile}
           />
 
-          <VisualizationArea currentView={currentView} />
+          <VisualizationArea
+            currentView={currentView}
+            files={files}
+            onFileClick={handleFileClick}
+          />
+
+          <FileInfoCard
+            file={selectedFile}
+            visible={!!selectedFile}
+            onClose={handleCloseCard}
+            onGenerateSummary={handleGenerateSummary}
+            summary={selectedFile ? summaries.get(selectedFile.path) : null}
+            isGenerating={isGeneratingSummary}
+            repoInfo={repoInfo}
+            hasApiKey={!!apiKeys[selectedProvider]}
+          />
         </>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          apiKeys={apiKeys}
+          selectedProvider={selectedProvider}
+          onSave={handleSaveSettings}
+          onClose={handleCloseSettings}
+        />
       )}
     </>
   )
