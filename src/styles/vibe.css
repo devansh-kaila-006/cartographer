@@ -1,0 +1,53 @@
+/* 🎨 Cyberpunk Scientific UI Design System */
+
+:root {
+  /* Colors */
+  --bg-deep: #0a0f1c;
+  --bg-surface: rgba(10, 15, 28, 0.08);
+  --accent-cyan: #00f3ff;
+  --accent-violet: #bd00ff;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+
+  /* Typography */
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+}
+
+/* Glassmorphism base */
+.glass {
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+/* Neon glow effect */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.3),
+              inset 0 0 10px rgba(0, 243, 255, 0.1);
+}
+
+.glow-violet {
+  box-shadow: 0 0 20px rgba(189, 0, 255, 0.3),
+              inset 0 0 10px rgba(189, 0, 255, 0.1);
+}
+
+/* HUD overlay */
+.hud-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Data display */
+.data-display {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-cyan);
+  letter-spacing: 0.05em;
+}
