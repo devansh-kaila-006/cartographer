@@ -1,109 +1,23 @@
-CARTOGRAPHER SOFTWARE LICENSE AGREEMENT
+COMMERCIAL LICENSE AGREEMENT
 
-Copyright (c) 2026 Cartographer. All rights reserved.
+Copyright (c) 2026 Devansh Kaila
 
-This Software License Agreement ("Agreement") is a legal agreement between you
-("Licensee") and Cartographer ("Licensor"). By using the Cartographer software
-("Software"), you agree to be bound by the terms of this Agreement.
+This software and its documentation ("Software") are the property of Devansh Kaila and are protected by copyright laws and international treaty provisions.
 
-GRANT OF LICENSE
+By installing, copying, or otherwise using the Software, you agree to be bound by the terms of this License.
 
-Subject to payment of the applicable license fees, Licensor grants Licensee a
-non-exclusive, non-transferable license to use the Software for the purposes
-specified in the purchased license tier.
+1. LICENSE GRANT
+Devansh Kaila grants you a non-exclusive, non-transferable license to use the Software, provided that you have a valid license or subscription as required by the author.
 
-LICENSE TIERS
+2. RESTRICTIONS
+- You may not redistribute, sell, or rent the Software to third parties.
+- You may not reverse engineer, decompile, or disassemble the Software.
+- You may not modify the Software without express written permission from the author.
 
-1. PERSONAL LICENSE ($49 USD)
-   - For individual use
-   - Single user
-   - Personal projects and learning
-   - No commercial use
-   - No redistribution rights
+3. TERMINATION
+This license is effective until terminated. Your rights under this license will terminate automatically without notice if you fail to comply with any of its terms.
 
-2. PROFESSIONAL LICENSE ($149 USD)
-   - For professional developers
-   - Single user
-   - Commercial projects
-   - Priority support
-   - Free updates for 1 year
+4. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
 
-3. TEAM LICENSE ($499 USD)
-   - Up to 5 users
-   - Commercial projects
-   - Priority support
-   - Free updates for 1 year
-   - Team management features
-
-4. ENTERPRISE LICENSE ($1,999 USD)
-   - Unlimited users within organization
-   - Commercial projects
-   - Dedicated support
-   - Custom integrations
-   - Free updates for 2 years
-   - SLA guarantee
-
-RESTRICTIONS
-
-Licensee may not:
-- Reverse engineer, decompile, or disassemble the Software
-- Distribute, transfer, sublicense, lease, lend, or rent the Software
-- Remove or alter any proprietary notices on the Software
-- Use the Software for illegal purposes
-- Share access credentials with unauthorized users
-- Create derivative works based on the Software
-
-INTELLECTUAL PROPERTY
-
-All rights, title, and interest in and to the Software, including all
-intellectual property rights, are and shall remain the exclusive property
-of Licensor. Licensee acknowledges that the Software is protected by
-copyright laws and international treaty provisions.
-
-PAYMENT TERMS
-
-License fees are non-refundable except as required by law. All licenses are
-perpetual unless otherwise terminated. Annual update subscriptions may be
-renewed at current pricing.
-
-SUPPORT AND UPDATES
-
-Professional, Team, and Enterprise licenses include:
-- Email support (response within 48 hours)
-- Bug fixes and security updates
-- Minor version updates
-- Major version upgrades at discounted rates
-
-TERMINATION
-
-This Agreement is effective until terminated. Licensor may terminate this
-Agreement immediately if Licensee breaches any term. Upon termination,
-Licensee must cease all use of the Software and destroy all copies.
-
-NO WARRANTY
-
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-
-LIMITATION OF LIABILITY
-
-IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF
-DATA, PROFITS, OR BUSINESS INTERRUPTION.
-
-GOVERNING LAW
-
-This Agreement shall be governed by and construed in accordance with the
-laws of the United States and the state of California. Any disputes shall
-be resolved in the courts of San Francisco, California.
-
-ENTIRE AGREEMENT
-
-This Agreement constitutes the entire agreement between the parties and
-supersedes all prior negotiations, representations, or agreements relating
-to this subject matter.
-
-For questions about licensing, contact: sales@cartographer.dev
-
-Last updated: January 2026
+For licensing inquiries and subscriptions, please contact: devanshkaila.2006@gmail.com

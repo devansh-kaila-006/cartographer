@@ -259,7 +259,7 @@ See the [LICENSE](LICENSE) file for complete terms.
 
 ### Purchase
 
-To purchase a license, visit: [cartographer.dev/pricing](https://cartographer.dev/pricing)
+For licensing inquiries, contact: **devanshkaila.2006@gmail.com**
 
 ## 🙏 Acknowledgments
 
@@ -270,15 +270,16 @@ To purchase a license, visit: [cartographer.dev/pricing](https://cartographer.de
 
 ## 📞 Support
 
-- **Issues** - [GitHub Issues](https://github.com/your-username/cartographer/issues)
-- **Discussions** - [GitHub Discussions](https://github.com/your-username/cartographer/discussions)
+For licensing inquiries and support, contact: **devanshkaila.2006@gmail.com**
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for developers who love beautiful tools**
+**Built with ❤️ by Devansh Kaila**
 
-[⭐ Star](https://github.com/your-username/cartographer) · [🍴 Fork](https://github.com/your-username/cartographer/fork) · [🐛 Report Issue](https://github.com/your-username/cartographer/issues)
+© 2026 Devansh Kaila. All rights reserved.
+
+For licensing inquiries: <a href="mailto:devanshkaila.2006@gmail.com">devanshkaila.2006@gmail.com</a>
 
 </div>

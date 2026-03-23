@@ -158,6 +158,13 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage, 
               </button>
             </div>
           </div>
+
+          {/* License Notice */}
+          <div className="license-notice">
+            <p className="license-text">
+              Commercial license required for business use. Contact: <a href="mailto:devanshkaila.2006@gmail.com">devanshkaila.2006@gmail.com</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

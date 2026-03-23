@@ -1,8 +1,11 @@
 {
   "name": "cartographer",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "description": "Understand any codebase visually",
+  "author": "Devansh Kaila <devanshkaila.2006@gmail.com>",
+  "license": "PROPRIETARY",
+  "homepage": "https://cartographer.dev",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -18,5 +21,15 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.4.1"
-  }
+  },
+  "keywords": [
+    "code-visualization",
+    "github",
+    "codebase",
+    "repository",
+    "visualization",
+    "developer-tools",
+    "code-explorer"
+  ],
+  "private": true
 }
