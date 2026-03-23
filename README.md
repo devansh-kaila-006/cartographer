@@ -227,37 +227,9 @@ Potential features for future versions:
 - [ ] Dark/light theme toggle
 - [ ] More AI providers (OpenAI, Claude, etc.)
 
-## 💰 Pricing & License
+## 📄 License
 
-### License Tiers
-
-**Personal License** - $49 USD
-- For individual use
-- Personal projects and learning
-- No commercial use
-
-**Professional License** - $149 USD
-- Single developer
-- Commercial projects
-- Priority support
-- 1 year of free updates
-
-**Team License** - $499 USD
-- Up to 5 users
-- Commercial projects
-- Priority support
-- Team management features
-
-**Enterprise License** - $1,999 USD
-- Unlimited users
-- Custom integrations
-- Dedicated support
-- SLA guarantee
-- 2 years of free updates
-
-See the [LICENSE](LICENSE) file for complete terms.
-
-### Purchase
+This software is licensed under a commercial license. See the [LICENSE](LICENSE) file for complete terms.
 
 For licensing inquiries, contact: **devanshkaila.2006@gmail.com**
 
