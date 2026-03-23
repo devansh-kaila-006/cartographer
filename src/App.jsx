@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { toPng } from 'html-to-image'
 import { LandingPage } from './components/LandingPage'
 import { TopBar } from './components/TopBar'
 import { LeftSidebar } from './components/LeftSidebar'
@@ -12,6 +13,7 @@ import { githubAPI } from './api/github'
 import audioManager from './utils/audioManager'
 
 function App() {
+  const visualizationRef = useRef(null)
   const [repoInfo, setRepoInfo] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
@@ -371,6 +373,74 @@ function App() {
     setShowAudioSettings(false)
   }
 
+  // Handle export as image
+  const handleExportImage = async () => {
+    const visualizationElement = visualizationRef.current
+
+    if (!visualizationElement) {
+      console.error('Visualization ref is not available')
+      alert('Unable to capture visualization. Please try again.')
+      return
+    }
+
+    try {
+      audioManager?.playClick()
+
+      // Find the SVG element
+      const svgElement = visualizationElement.querySelector('svg')
+      if (!svgElement) {
+        alert('Could not find visualization to export.')
+        return
+      }
+
+      const gElement = visualizationElement.querySelector('svg > g')
+      if (!gElement) {
+        alert('Could not find visualization content.')
+        return
+      }
+
+      // Store original transform and viewBox
+      const originalTransform = gElement.getAttribute('transform') || ''
+      const originalViewBox = svgElement.getAttribute('viewBox') || ''
+
+      // Remove transform to get actual content positions
+      gElement.removeAttribute('transform')
+
+      // Calculate bounding box of all content
+      const bbox = svgElement.getBBox()
+      const padding = 50
+
+      // Create new viewBox that encompasses all content
+      const newViewBox = `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`
+      svgElement.setAttribute('viewBox', newViewBox)
+
+      // Force reflow and wait
+      svgElement.offsetHeight
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Capture
+      const dataUrl = await toPng(visualizationElement, {
+        backgroundColor: '#0f172a',
+        quality: 1,
+        pixelRatio: 2,
+        cacheBust: true,
+      })
+
+      // Restore original state
+      gElement.setAttribute('transform', originalTransform)
+      svgElement.setAttribute('viewBox', originalViewBox)
+
+      // Download
+      const link = document.createElement('a')
+      link.download = `cartographer-${repoInfo.repo}-${currentView}-${new Date().toISOString().slice(0, 10)}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (error) {
+      console.error('Failed to export image:', error)
+      alert('Failed to export image: ' + error.message)
+    }
+  }
+
   return (
     <>
       {/* Landing Page - shown when no repo is loaded */}
@@ -395,6 +465,7 @@ function App() {
             onOpenSettings={handleOpenSettings}
             onOpenAudioSettings={handleOpenAudioSettings}
             onShowShortcuts={() => setShowKeyboardShortcuts(true)}
+            onExportImage={handleExportImage}
             audioManager={audioManager}
           />
 
@@ -409,6 +480,7 @@ function App() {
           />
 
           <VisualizationArea
+            ref={visualizationRef}
             currentView={currentView}
             files={files}
             onFileClick={handleFileClick}

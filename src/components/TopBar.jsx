@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon, HelpIcon } from './Icons'
+import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon, HelpIcon, DownloadIcon } from './Icons'
 import './TopBar.css'
 
-export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings, onShowShortcuts, audioManager }) {
+export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings, onShowShortcuts, onExportImage, audioManager }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const views = [
@@ -43,6 +43,19 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
 
       {/* Right: Actions */}
       <div className="top-bar-right">
+        <button
+          className="action-button"
+          onClick={() => {
+            audioManager?.playClick()
+            onExportImage()
+          }}
+          onMouseEnter={() => audioManager?.playHover()}
+          title="Export visualization as image"
+        >
+          <span className="action-icon"><DownloadIcon /></span>
+          <span className="action-label">Export</span>
+        </button>
+
         <button
           className="action-button"
           onClick={() => {

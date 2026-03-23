@@ -1,9 +1,9 @@
 import { SunburstIcon, ChordIcon, GridIcon } from './Icons'
 import { Tooltip } from './Tooltip'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import './VisualizationArea.css'
 
-export function VisualizationArea({ currentView, files, onFileClick, audioManager, timelinePosition = 100, searchQuery = '' }) {
+export const VisualizationArea = forwardRef(({ currentView, files, onFileClick, audioManager, timelinePosition = 100, searchQuery = '' }, ref) => {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -1144,7 +1144,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
             )}
           </div>
         </div>
-        <div className="visualization-content">
+        <div className="visualization-content" ref={ref}>
           {searchActive && !hasSearchResults ? (
             <div className="no-search-results">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1242,4 +1242,6 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
       </div>
     </div>
   )
-}
+})
+
+VisualizationArea.displayName = 'VisualizationArea'

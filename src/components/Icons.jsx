@@ -178,3 +178,9 @@ export const ResetIcon = () => (
     <path d="M13.5 8C13.5 10.4853 11.4853 12.5 9 12.5C6.51472 12.5 4.5 10.4853 4.5 8C4.5 5.51472 6.51472 3.5 9 3.5C10.1256 3.5 11.1638 3.88639 11.9775 4.52246L10.5 6H14.5V2L13.207 3.29289C12.0655 2.16312 10.5809 1.5 9 1.5C5.68629 1.5 3 4.18629 3 7.5C3 10.8137 5.68629 13.5 9 13.5C12.3137 13.5 15 10.8137 15 7.5H13.5Z" fill="currentColor"/>
   </svg>
 )
+
+export const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 2V10M8 10L5 7M8 10L11 7M3 11V13C3 13.5523 3.44772 14 4 14H12C12.5523 14 13 13.5523 13 13V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
