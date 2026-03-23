@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { ChevronRightIcon, ChevronDownIcon, SearchIcon, JavaScriptIcon, CSSIcon, JSONIcon, FileIcon } from './Icons'
 import './LeftSidebar.css'
 
-export function LeftSidebar({ files, onFileClick, selectedFile }) {
+export function LeftSidebar({ files, onFileClick, selectedFile, audioManager }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedFolders, setCollapsedFolders] = useState(new Set())
 
@@ -71,6 +71,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
 
   // Toggle folder collapse
   const toggleFolder = (path) => {
+    audioManager?.playClick()
     setCollapsedFolders(prev => {
       const newSet = new Set(prev)
       if (newSet.has(path)) {
@@ -120,6 +121,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
                 className={`tree-folder ${isCollapsed ? 'collapsed' : ''}`}
                 style={{ paddingLeft: `${depth * 16 + 12}px` }}
                 onClick={() => toggleFolder(item.path)}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 <span className="folder-icon">
                   {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
@@ -135,7 +137,11 @@ export function LeftSidebar({ files, onFileClick, selectedFile }) {
               key={item.path}
               className={`tree-file ${isSelected ? 'selected' : ''}`}
               style={{ paddingLeft: `${depth * 16 + 28}px` }}
-              onClick={() => onFileClick && onFileClick(item.file)}
+              onClick={() => {
+                audioManager?.playClick()
+                onFileClick && onFileClick(item.file)
+              }}
+              onMouseEnter={() => audioManager?.playHover()}
             >
               <span className="file-icon">{getFileIcon(item.file)}</span>
               <span className="file-name">{item.name}</span>

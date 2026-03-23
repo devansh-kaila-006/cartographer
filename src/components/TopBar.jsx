@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon } from './Icons'
 import './TopBar.css'
 
-export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings }) {
+export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings, audioManager }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const views = [
@@ -27,7 +27,11 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
             <button
               key={view.id}
               className={`view-button ${currentView === view.id ? 'active' : ''}`}
-              onClick={() => onViewChange(view.id)}
+              onClick={() => {
+                audioManager?.playClick()
+                onViewChange(view.id)
+              }}
+              onMouseEnter={() => audioManager?.playHover()}
               title={`${view.label} visualization`}
             >
               <span className="view-icon">{view.icon}</span>
@@ -41,7 +45,11 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
       <div className="top-bar-right">
         <button
           className="action-button"
-          onClick={onReset}
+          onClick={() => {
+            audioManager?.playClick()
+            onReset()
+          }}
+          onMouseEnter={() => audioManager?.playHover()}
           title="Load new repository"
         >
           <span className="action-icon"><RefreshIcon /></span>
@@ -51,7 +59,11 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
         <div className="settings-dropdown">
           <button
             className="action-button"
-            onClick={() => setShowDropdown(!showDropdown)}
+            onClick={() => {
+              audioManager?.playClick()
+              setShowDropdown(!showDropdown)
+            }}
+            onMouseEnter={() => audioManager?.playHover()}
             title="Settings"
           >
             <span className="action-icon"><SettingsIcon /></span>
@@ -62,9 +74,11 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
               <button
                 className="dropdown-item"
                 onClick={() => {
+                  audioManager?.playClick()
                   onOpenSettings()
                   setShowDropdown(false)
                 }}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 <span><KeyIcon /></span>
                 <span>API Keys</span>
@@ -72,9 +86,11 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
               <button
                 className="dropdown-item"
                 onClick={() => {
+                  audioManager?.playClick()
                   onOpenAudioSettings()
                   setShowDropdown(false)
                 }}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 <span><AudioIcon /></span>
                 <span>Audio</span>

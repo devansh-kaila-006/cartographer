@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { CloseIcon, KeyIcon, CheckIcon } from './Icons'
 import './SettingsModal.css'
 
-export function SettingsModal({ apiKeys, selectedProvider, onSave, onClose }) {
+export function SettingsModal({ apiKeys, selectedProvider, onSave, onClose, audioManager }) {
   const [keys, setKeys] = useState(apiKeys)
   const [showKey, setShowKey] = useState(false)
 
   const handleSave = () => {
+    audioManager?.playSuccess()
     onSave(keys, 'gemini')
   }
 
@@ -55,7 +56,10 @@ export function SettingsModal({ apiKeys, selectedProvider, onSave, onClose }) {
             <span className="settings-icon"><KeyIcon /></span>
             <h2>API Settings</h2>
           </div>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={() => {
+            audioManager?.playClick()
+            onClose()
+          }}>
             <CloseIcon />
           </button>
         </div>
@@ -93,7 +97,11 @@ export function SettingsModal({ apiKeys, selectedProvider, onSave, onClose }) {
               />
               <button
                 className="toggle-visibility"
-                onClick={() => setShowKey(!showKey)}
+                onClick={() => {
+                  audioManager?.playClick()
+                  setShowKey(!showKey)
+                }}
+                onMouseEnter={() => audioManager?.playHover()}
                 type="button"
               >
                 {showKey ? <EyeOffIcon /> : <EyeIcon />}
@@ -104,10 +112,13 @@ export function SettingsModal({ apiKeys, selectedProvider, onSave, onClose }) {
 
         {/* Actions */}
         <div className="settings-actions">
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" onClick={() => {
+            audioManager?.playClick()
+            onClose()
+          }} onMouseEnter={() => audioManager?.playHover()}>
             Cancel
           </button>
-          <button className="btn btn-primary" onClick={handleSave}>
+          <button className="btn btn-primary" onClick={handleSave} onMouseEnter={() => audioManager?.playHover()}>
             Save Settings
           </button>
         </div>

@@ -2,12 +2,27 @@ import { useState } from 'react'
 import { CloseIcon, AudioIcon } from './Icons'
 import './AudioSettingsModal.css'
 
-export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose }) {
+export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose, audioManager }) {
   const [enabled, setEnabled] = useState(soundEnabled)
   const [vol, setVol] = useState(volume)
 
   const handleSave = () => {
+    audioManager?.playSuccess()
     onSave(enabled, vol)
+  }
+
+  const handleToggleSound = () => {
+    audioManager?.playClick()
+    setEnabled(!enabled)
+  }
+
+  const handleVolumeChange = (newVol) => {
+    setVol(newVol)
+    // Play a test sound at the new volume
+    if (enabled) {
+      audioManager?.setVolume(newVol)
+      audioManager?.playClick()
+    }
   }
 
   return (
@@ -19,7 +34,10 @@ export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose }) {
             <span className="audio-settings-icon"><AudioIcon /></span>
             <h2>Audio Settings</h2>
           </div>
-          <button className="close-button" onClick={onClose}>
+          <button className="close-button" onClick={() => {
+            audioManager?.playClick()
+            onClose()
+          }}>
             <CloseIcon />
           </button>
         </div>
@@ -40,7 +58,8 @@ export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose }) {
             </label>
             <button
               className={`toggle-button ${enabled ? 'active' : ''}`}
-              onClick={() => setEnabled(!enabled)}
+              onClick={handleToggleSound}
+              onMouseEnter={() => audioManager?.playHover()}
             >
               <span className="toggle-slider">{enabled ? 'ON' : 'OFF'}</span>
             </button>
@@ -57,7 +76,7 @@ export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose }) {
                 min="0"
                 max="100"
                 value={vol}
-                onChange={(e) => setVol(Number(e.target.value))}
+                onChange={(e) => handleVolumeChange(Number(e.target.value))}
                 className="volume-slider"
                 disabled={!enabled}
               />
@@ -68,10 +87,13 @@ export function AudioSettingsModal({ soundEnabled, volume, onSave, onClose }) {
 
         {/* Actions */}
         <div className="audio-settings-actions">
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" onClick={() => {
+            audioManager?.playClick()
+            onClose()
+          }} onMouseEnter={() => audioManager?.playHover()}>
             Cancel
           </button>
-          <button className="btn btn-primary" onClick={handleSave}>
+          <button className="btn btn-primary" onClick={handleSave} onMouseEnter={() => audioManager?.playHover()}>
             Save Settings
           </button>
         </div>

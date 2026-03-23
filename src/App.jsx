@@ -5,7 +5,9 @@ import { LeftSidebar } from './components/LeftSidebar'
 import { VisualizationArea } from './components/VisualizationArea'
 import { FileInfoCard } from './components/FileInfoCard'
 import { SettingsModal } from './components/SettingsModal'
+import { AudioSettingsModal } from './components/AudioSettingsModal'
 import { githubAPI } from './api/github'
+import audioManager from './utils/audioManager'
 
 function App() {
   const [repoInfo, setRepoInfo] = useState(null)
@@ -22,17 +24,26 @@ function App() {
     gemini: ''
   })
   const [selectedProvider, setSelectedProvider] = useState('gemini')
+  const [showAudioSettings, setShowAudioSettings] = useState(false)
+  const [audioSettings, setAudioSettings] = useState({
+    soundEnabled: false,
+    volume: 50
+  })
 
   // Load API keys from localStorage on mount
   useEffect(() => {
     const savedKeys = localStorage.getItem('cartographer_api_keys')
     const savedProvider = localStorage.getItem('cartographer_ai_provider')
+    const savedAudioSettings = localStorage.getItem('cartographer_audio_settings')
 
     if (savedKeys) {
       setApiKeys(JSON.parse(savedKeys))
     }
     if (savedProvider) {
       setSelectedProvider(savedProvider)
+    }
+    if (savedAudioSettings) {
+      setAudioSettings(JSON.parse(savedAudioSettings))
     }
   }, [])
 
@@ -45,6 +56,20 @@ function App() {
   useEffect(() => {
     localStorage.setItem('cartographer_ai_provider', selectedProvider)
   }, [selectedProvider])
+
+  // Save audio settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('cartographer_audio_settings', JSON.stringify(audioSettings))
+    // Update audio manager
+    audioManager.setEnabled(audioSettings.soundEnabled)
+    audioManager.setVolume(audioSettings.volume)
+  }, [audioSettings])
+
+  // Initialize audio manager on mount
+  useEffect(() => {
+    audioManager.setEnabled(audioSettings.soundEnabled)
+    audioManager.setVolume(audioSettings.volume)
+  }, [])
 
   // Handle repository loading from landing page
   const handleLoadRepo = async (owner, repo) => {
@@ -179,6 +204,23 @@ function App() {
     setShowSettings(false)
   }
 
+  // Handle audio settings
+  const handleOpenAudioSettings = () => {
+    setShowAudioSettings(true)
+  }
+
+  const handleCloseAudioSettings = () => {
+    setShowAudioSettings(false)
+  }
+
+  const handleSaveAudioSettings = (soundEnabled, volume) => {
+    setAudioSettings({
+      soundEnabled,
+      volume
+    })
+    setShowAudioSettings(false)
+  }
+
   return (
     <>
       {/* Landing Page - shown when no repo is loaded */}
@@ -188,6 +230,7 @@ function App() {
           isLoading={isLoading}
           loadingProgress={loadingProgress}
           loadingStage={loadingStage}
+          audioManager={audioManager}
         />
       )}
 
@@ -200,22 +243,27 @@ function App() {
             onViewChange={handleViewChange}
             onReset={handleReset}
             onOpenSettings={handleOpenSettings}
+            onOpenAudioSettings={handleOpenAudioSettings}
+            audioManager={audioManager}
           />
 
           <LeftSidebar
             files={files}
             onFileClick={handleFileClick}
             selectedFile={selectedFile}
+            audioManager={audioManager}
           />
 
           <VisualizationArea
             currentView={currentView}
             files={files}
             onFileClick={handleFileClick}
+            audioManager={audioManager}
           />
 
           <FileInfoCard
             file={selectedFile}
+            audioManager={audioManager}
             visible={!!selectedFile}
             onClose={handleCloseCard}
             onGenerateSummary={handleGenerateSummary}
@@ -234,6 +282,18 @@ function App() {
           selectedProvider={selectedProvider}
           onSave={handleSaveSettings}
           onClose={handleCloseSettings}
+          audioManager={audioManager}
+        />
+      )}
+
+      {/* Audio Settings Modal */}
+      {showAudioSettings && (
+        <AudioSettingsModal
+          soundEnabled={audioSettings.soundEnabled}
+          volume={audioSettings.volume}
+          onSave={handleSaveAudioSettings}
+          onClose={handleCloseAudioSettings}
+          audioManager={audioManager}
         />
       )}
     </>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { LoadingIcon, CheckIcon } from './Icons'
 import './LandingPage.css'
 
-export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }) {
+export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage, audioManager }) {
   const [owner, setOwner] = useState('')
   const [repo, setRepo] = useState('')
   const [error, setError] = useState('')
@@ -12,14 +12,17 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
 
     if (!owner.trim() || !repo.trim()) {
       setError('Please enter both owner and repository')
+      audioManager?.playError()
       return
     }
 
     setError('')
+    audioManager?.playSuccess()
     onLoad(owner.trim(), repo.trim())
   }
 
   const loadSampleRepo = (sampleOwner, sampleRepo) => {
+    audioManager?.playClick()
     setOwner(sampleOwner)
     setRepo(sampleRepo)
   }
@@ -119,6 +122,7 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
               type="submit"
               className="btn btn-primary submit-btn"
               disabled={isLoading}
+              onMouseEnter={() => audioManager?.playHover()}
             >
               Load Repository
             </button>
@@ -132,6 +136,7 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
                 className="btn btn-ghost sample-btn"
                 onClick={() => loadSampleRepo('facebook', 'react')}
                 disabled={isLoading}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 facebook/react
               </button>
@@ -139,6 +144,7 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
                 className="btn btn-ghost sample-btn"
                 onClick={() => loadSampleRepo('vercel', 'next.js')}
                 disabled={isLoading}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 vercel/next.js
               </button>
@@ -146,6 +152,7 @@ export function LandingPage({ onLoad, isLoading, loadingProgress, loadingStage }
                 className="btn btn-ghost sample-btn"
                 onClick={() => loadSampleRepo('nodejs', 'node')}
                 disabled={isLoading}
+                onMouseEnter={() => audioManager?.playHover()}
               >
                 nodejs/node
               </button>

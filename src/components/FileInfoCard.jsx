@@ -12,7 +12,7 @@ const FileIcon = () => (
   </svg>
 )
 
-export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summary, isGenerating, repoInfo, hasApiKey }) {
+export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summary, isGenerating, repoInfo, hasApiKey, audioManager }) {
   const [copied, setCopied] = useState(false)
 
   if (!visible || !file) return null
@@ -47,6 +47,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
   // Handle copy path
   const handleCopyPath = () => {
     navigator.clipboard.writeText(file.path)
+    audioManager?.playSuccess()
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -54,6 +55,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
   // Handle view on GitHub
   const handleViewOnGitHub = () => {
     if (repoInfo) {
+      audioManager?.playClick()
       const url = `https://github.com/${repoInfo.owner}/${repoInfo.repo}/blob/main/${file.path}`
       window.open(url, '_blank')
     }
@@ -61,6 +63,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
 
   // Handle generate summary
   const handleGenerateSummary = () => {
+    audioManager?.playClick()
     if (onGenerateSummary) {
       onGenerateSummary(file)
     }
@@ -68,7 +71,10 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
 
   return (
     <div className="file-info-card">
-      <button className="close-button" onClick={onClose}>
+      <button className="close-button" onClick={() => {
+        audioManager?.playClick()
+        onClose()
+      }}>
         <CloseIcon />
       </button>
 
@@ -120,7 +126,10 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
           </div>
           <button
             className="configure-api-btn"
-            onClick={onGenerateSummary}
+            onClick={() => {
+              audioManager?.playClick()
+              onGenerateSummary()
+            }}
           >
             <KeyIcon />
             Configure API Key
@@ -142,6 +151,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
           className="action-btn"
           onClick={handleCopyPath}
           disabled={copied}
+          onMouseEnter={() => !copied && audioManager?.playHover()}
         >
           {copied ? <><CheckIcon /> Copied!</> : 'Copy Path'}
         </button>
@@ -149,6 +159,7 @@ export function FileInfoCard({ file, visible, onClose, onGenerateSummary, summar
           <button
             className="action-btn"
             onClick={handleViewOnGitHub}
+            onMouseEnter={() => audioManager?.playHover()}
           >
             View on GitHub
           </button>

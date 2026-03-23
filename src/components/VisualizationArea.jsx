@@ -2,7 +2,7 @@ import { SunburstIcon, ChordIcon, GridIcon } from './Icons'
 import { useState, useRef, useEffect } from 'react'
 import './VisualizationArea.css'
 
-export function VisualizationArea({ currentView, files, onFileClick }) {
+export function VisualizationArea({ currentView, files, onFileClick, audioManager }) {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -18,8 +18,13 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
 
   const handleNodeClick = (file) => {
     if (onFileClick && file) {
+      audioManager?.playClick()
       onFileClick(file)
     }
+  }
+
+  const handleNodeHover = () => {
+    audioManager?.playHover()
   }
 
   const toggleDirectory = (dirPath) => {
@@ -35,14 +40,17 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
   }
 
   const handleZoomIn = () => {
+    audioManager?.playClick()
     setZoom(prev => Math.min(prev + 0.2, 3))
   }
 
   const handleZoomOut = () => {
+    audioManager?.playClick()
     setZoom(prev => Math.max(prev - 0.2, 0.4))
   }
 
   const handleResetZoom = () => {
+    audioManager?.playClick()
     setZoom(1)
     setPan({ x: 0, y: 0 })
   }
@@ -262,6 +270,7 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
                     e.stopPropagation()
                     handleNodeClick(file)
                   }}
+                  onMouseEnter={handleNodeHover}
                 />
 
                 {/* File name */}
@@ -404,6 +413,7 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
                 e.stopPropagation()
                 handleNodeClick(child)
               }}
+              onMouseEnter={handleNodeHover}
             />
             {shouldShowLabel && (
               <text
@@ -472,6 +482,7 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
                 e.stopPropagation()
                 handleNodeClick(file)
               }}
+              onMouseEnter={handleNodeHover}
             />
           </g>
         )
@@ -727,8 +738,10 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
                     className="chord-dir-node"
                     onClick={(e) => {
                       e.stopPropagation()
+                      audioManager?.playClick()
                       toggleDirectory(dir.path)
                     }}
+                    onMouseEnter={handleNodeHover}
                   />
 
                   {/* File count in center */}
@@ -775,6 +788,7 @@ export function VisualizationArea({ currentView, files, onFileClick }) {
                       e.stopPropagation()
                       handleNodeClick(node.data)
                     }}
+                    onMouseEnter={handleNodeHover}
                   />
                 </g>
               )
