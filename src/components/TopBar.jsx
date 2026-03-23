@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon } from './Icons'
+import { SunburstIcon, ChordIcon, GridIcon, RefreshIcon, SettingsIcon, KeyIcon, AudioIcon, HelpIcon } from './Icons'
 import './TopBar.css'
 
-export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings, audioManager }) {
+export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSettings, onOpenAudioSettings, onShowShortcuts, audioManager }) {
   const [showDropdown, setShowDropdown] = useState(false)
 
   const views = [
@@ -98,6 +98,19 @@ export function TopBar({ repoInfo, currentView, onViewChange, onReset, onOpenSet
             </div>
           )}
         </div>
+
+        <button
+          className="action-button shortcuts-button"
+          onClick={() => {
+            audioManager?.playClick()
+            onShowShortcuts()
+          }}
+          onMouseEnter={() => audioManager?.playHover()}
+          title="Keyboard shortcuts (?)"
+        >
+          <span className="action-icon"><HelpIcon /></span>
+          <span className="action-label shortcuts-label">Shortcuts</span>
+        </button>
       </div>
     </div>
   )

@@ -1,14 +1,131 @@
 import { SunburstIcon, ChordIcon, GridIcon } from './Icons'
+import { Tooltip } from './Tooltip'
 import { useState, useRef, useEffect } from 'react'
 import './VisualizationArea.css'
 
-export function VisualizationArea({ currentView, files, onFileClick, audioManager }) {
+export function VisualizationArea({ currentView, files, onFileClick, audioManager, timelinePosition = 100, searchQuery = '' }) {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [expandedDirs, setExpandedDirs] = useState(new Set())
   const svgRef = useRef(null)
+  const panRef = useRef({ x: 0, y: 0 })
+  const zoomCenterRef = useRef({ x: 400, y: 300 })
+  const [showInfo, setShowInfo] = useState(false)
+
+  // Keep panRef in sync with pan state
+  useEffect(() => {
+    panRef.current = pan
+  }, [pan])
+
+  // Update zoom center based on view
+  useEffect(() => {
+    if (currentView === 'sunburst') {
+      zoomCenterRef.current = { x: 400, y: 300 }
+    } else if (currentView === 'chord') {
+      zoomCenterRef.current = { x: 400, y: 300 }
+    } else {
+      // Grid - center will be calculated dynamically in renderIcicle
+      zoomCenterRef.current = { x: 400, y: 300 }
+    }
+  }, [currentView, timelinePosition])
+
+  // Keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input
+      const target = e.target
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return
+      }
+
+      const isModKey = e.metaKey || e.ctrlKey
+
+      // Plus/Equals: Zoom in
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        handleZoomIn()
+      }
+
+      // Minus: Zoom out
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        handleZoomOut()
+      }
+
+      // Cmd/Ctrl + 0: Reset zoom
+      if (isModKey && e.key === '0') {
+        e.preventDefault()
+        handleResetZoom()
+      }
+
+      // I: Toggle info box
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault()
+        setShowInfo(prev => !prev)
+        audioManager?.playClick()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [zoom, pan])
+
+  // Filter files based on timeline position
+  const getVisibleFiles = () => {
+    if (!files || files.length === 0) return []
+
+    // Get the date range from all files
+    const dates = files
+      .map(f => new Date(f.createdAt))
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a, b) => a - b)
+
+    if (dates.length === 0) {
+      // No valid dates, show all files as non-ghost
+      return files.map(file => ({ ...file, isGhost: false }))
+    }
+
+    const minDate = dates[0]
+    const maxDate = dates[dates.length - 1]
+    const totalMs = maxDate.getTime() - minDate.getTime()
+
+    // Handle case where all files have the same date
+    if (totalMs === 0) {
+      return files.map(file => ({ ...file, isGhost: false }))
+    }
+
+    const currentMs = totalMs * (timelinePosition / 100)
+    const currentDate = new Date(minDate.getTime() + currentMs)
+
+    // Filter files that exist at or before the current timeline position
+    return files.map(file => {
+      const fileDate = new Date(file.createdAt)
+      const isGhost = isNaN(fileDate.getTime()) ? false : fileDate > currentDate
+      return { ...file, isGhost }
+    })
+  }
+
+  // Filter files based on search query
+  const getFilteredFiles = () => {
+    const timelineFiltered = getVisibleFiles()
+
+    if (!searchQuery || searchQuery.trim() === '') {
+      return timelineFiltered
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+
+    // Find files that match the search
+    const matchingFiles = timelineFiltered.filter(file =>
+      file.path.toLowerCase().includes(query)
+    )
+
+    return matchingFiles
+  }
+
+  const visibleFiles = getFilteredFiles()
 
   // Reset zoom and pan when switching views
   useEffect(() => {
@@ -41,12 +158,40 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
 
   const handleZoomIn = () => {
     audioManager?.playClick()
-    setZoom(prev => Math.min(prev + 0.2, 3))
+    const prevZoom = zoom
+    const prevPan = panRef.current
+    const newZoom = Math.min(prevZoom + 0.2, 3)
+
+    // To keep the zoomCenter fixed when scaling:
+    // newTranslate = zoomCenter - (zoomCenter - oldTranslate) * (newScale / oldScale)
+    // Simplified: newTranslate = zoomCenter * (1 - newScale/oldScale) + oldTranslate * (newScale/oldScale)
+    const scaleRatio = newZoom / prevZoom
+
+    const newPan = {
+      x: zoomCenterRef.current.x * (1 - scaleRatio) + prevPan.x * scaleRatio,
+      y: zoomCenterRef.current.y * (1 - scaleRatio) + prevPan.y * scaleRatio
+    }
+
+    setZoom(newZoom)
+    setPan(newPan)
   }
 
   const handleZoomOut = () => {
     audioManager?.playClick()
-    setZoom(prev => Math.max(prev - 0.2, 0.4))
+    const prevZoom = zoom
+    const prevPan = panRef.current
+    const newZoom = Math.max(prevZoom - 0.2, 0.4)
+
+    // To keep the zoomCenter fixed when scaling:
+    const scaleRatio = newZoom / prevZoom
+
+    const newPan = {
+      x: zoomCenterRef.current.x * (1 - scaleRatio) + prevPan.x * scaleRatio,
+      y: zoomCenterRef.current.y * (1 - scaleRatio) + prevPan.y * scaleRatio
+    }
+
+    setZoom(newZoom)
+    setPan(newPan)
   }
 
   const handleResetZoom = () => {
@@ -94,6 +239,8 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
   const buildFileTree = (fileList) => {
     const root = { name: 'root', children: [], files: [], size: 0 }
 
+    if (!fileList || fileList.length === 0) return root
+
     fileList.forEach(file => {
       const parts = file.path.split('/')
       let current = root
@@ -118,7 +265,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
     return root
   }
 
-  const fileTree = buildFileTree(files || [])
+  const fileTree = buildFileTree(visibleFiles || [])
 
   // Grid Heatmap Visualization - Improved
   const renderIcicle = () => {
@@ -177,7 +324,8 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
       folder.files.map(file => ({
         ...file,
         folderName: folder.name,
-        folderPath: folder.path
+        folderPath: folder.path,
+        isGhost: file.isGhost || false
       }))
     )
 
@@ -209,6 +357,11 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
       if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
       return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
     }
+
+    // Update zoom center for grid view
+    const centerX = totalWidth / 2
+    const centerY = totalHeight / 2
+    zoomCenterRef.current = { x: centerX, y: centerY }
 
     return (
       <svg
@@ -265,12 +418,17 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
                   width={cellSize}
                   height={cellSize}
                   rx={Math.max(4, cellSize * 0.12)}
-                  fill={getFileColor(file.language)}
+                  fill={file.isGhost ? 'transparent' : getFileColor(file.language)}
+                  stroke={file.isGhost ? getFileColor(file.language) : 'rgba(255,255,255,0.2)'}
+                  strokeWidth={file.isGhost ? 2 : 1.5}
+                  strokeDasharray={file.isGhost ? '4 2' : '0'}
+                  opacity={file.isGhost ? 0.3 : 1}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleNodeClick(file)
                   }}
                   onMouseEnter={handleNodeHover}
+                  style={file.isGhost ? { pointerEvents: 'none' } : {}}
                 />
 
                 {/* File name */}
@@ -325,7 +483,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
     const centerX = 400
     const centerY = 300
     const maxLevel = 4
-    const levelRadius = 55
+    const levelRadius = 70
 
     const colors = [
       '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981',
@@ -453,17 +611,18 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
 
         // File colors based on language
         const fileColors = {
-          'javascript': '#f7df1e',
-          'jsx': '#61dafb',
-          'typescript': '#3178c6',
-          'tsx': '#61dafb',
-          'css': '#264de4',
-          'html': '#e34c26',
-          'json': '#f7df1e',
-          'markdown': '#083fa1',
-          'python': '#3776ab',
-          'rust': '#000000',
-          'go': '#00add8',
+          'javascript': '#f59e0b',
+          'jsx': '#0ea5e9',
+          'typescript': '#3b82f6',
+          'tsx': '#0ea5e9',
+          'css': '#8b5cf6',
+          'html': '#f97316',
+          'json': '#10b981',
+          'markdown': '#64748b',
+          'md': '#64748b',
+          'python': '#eab308',
+          'rust': '#ef4444',
+          'go': '#06b6d4',
         }
         const fileColor = fileColors[file.language] || '#6b7280'
 
@@ -473,16 +632,18 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
           <g key={`file-${file.path}`}>
             <path
               d={fileArcPath}
-              fill={fileColor}
-              stroke="#ffffff"
-              strokeWidth="1"
-              opacity="0.85"
+              fill={file.isGhost ? 'transparent' : fileColor}
+              stroke={file.isGhost ? fileColor : 'rgba(255,255,255,0.3)'}
+              strokeWidth={file.isGhost ? 2 : 1.5}
+              strokeDasharray={file.isGhost ? '4 2' : '0'}
+              opacity={file.isGhost ? 0.3 : 0.85}
               className="sunburst-arc-file"
               onClick={(e) => {
                 e.stopPropagation()
-                handleNodeClick(file)
+                if (!file.isGhost) handleNodeClick(file)
               }}
               onMouseEnter={handleNodeHover}
+              style={file.isGhost ? { pointerEvents: 'none' } : {}}
             />
           </g>
         )
@@ -490,7 +651,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
         currentAngle = fileEnd
       })
 
-      return elements.length > 0 ? <>{elements}</> : null
+      return elements
     }
 
     return (
@@ -507,8 +668,8 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <style>{`
-          .sunburst-arc { transition: opacity 0.2s; cursor: pointer; }
-          .sunburst-arc:hover { opacity: 1; filter: brightness(1.15); }
+          .sunburst-arc { transition: all 0.2s; cursor: pointer; }
+          .sunburst-arc:hover { opacity: 1; filter: brightness(1.15); stroke-width: 2px; }
           .sunburst-text { pointer-events: none; font-family: system-ui, -apple-system, sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         `}</style>
 
@@ -517,7 +678,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
           <circle
             cx={centerX}
             cy={centerY}
-            r="23"
+            r="35"
             fill="#1e293b"
             stroke="#ffffff"
             strokeWidth="3"
@@ -527,7 +688,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
             x={centerX}
             y={centerY}
             fill="white"
-            fontSize="11"
+            fontSize="13"
             fontWeight="700"
             textAnchor="middle"
             dominantBaseline="middle"
@@ -536,7 +697,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
             Root
           </text>
 
-          {renderNode(fileTree, 1, 0, Math.PI * 2)}
+          {renderNode(fileTree, 1, 0, Math.PI * 2) || []}
         </g>
       </svg>
     )
@@ -566,8 +727,12 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
       return Array.from(dirs.values()).sort((a, b) => a.depth - b.depth || b.files.length - a.files.length)
     }
 
-    const directories = groupFilesByDirectory(files || [])
+    // Use visibleFiles (filtered by search) instead of raw files
+    const directories = groupFilesByDirectory(visibleFiles || [])
     const dirCount = directories.length
+
+    // Check if search is active
+    const searchActive = searchQuery && searchQuery.trim() !== ''
 
     // Calculate radius for the circle - make it much larger to spread nodes out
     const maxRadius = 380 // Maximum radius that fits in the canvas
@@ -578,14 +743,28 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
     // Keep label offset simple and constant
     const labelOffset = 45
 
-    // Simple professional color palette (only 6 colors)
-    const getDirColor = (index) => {
+    // Enhanced color palette with search highlighting
+    const getDirColor = (index, isHighlighted = false) => {
+      if (isHighlighted && searchActive) {
+        return '#fbbf24' // Amber for highlighted directories during search
+      }
       const colors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed']
       return colors[index % colors.length]
     }
 
-    // Simple file colors
-    const getFileColor = () => '#64748b'
+    // Enhanced file colors with search highlighting
+    const getFileColor = (isHighlighted = false) => {
+      if (isHighlighted && searchActive) {
+        return '#fbbf24' // Amber for highlighted files
+      }
+      return '#64748b'
+    }
+
+    // Check if file matches search query
+    const fileMatchesSearch = (file) => {
+      if (!searchActive) return false
+      return file.path.toLowerCase().includes(searchQuery.toLowerCase())
+    }
 
     // Create nodes
     const createNodes = () => {
@@ -699,7 +878,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
           {/* Define gradients for connections */}
           <defs>
             {connections.map((conn, i) => (
-              <linearGradient key={i} id={`gradient-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <linearGradient key={`grad-${conn.x1}-${conn.y1}-${conn.x2}-${conn.y2}`} id={`gradient-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor={conn.color} stopOpacity="0.4" />
                 <stop offset="100%" stopColor={conn.colorEnd || conn.color} stopOpacity="0.4" />
               </linearGradient>
@@ -709,7 +888,7 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
           {/* Connections */}
           {connections.map((conn, i) => (
             <line
-              key={i}
+              key={`line-${conn.x1}-${conn.y1}-${conn.x2}-${conn.y2}`}
               x1={conn.x1}
               y1={conn.y1}
               x2={conn.x2}
@@ -724,17 +903,55 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
             if (node.type === 'directory') {
               const dir = node.data
               const isExpanded = expandedDirs.has(dir.path)
-              const dirColor = getDirColor(i)
+
+              // Check if this directory contains matching files
+              const matchingFileCount = dir.files.filter(f => fileMatchesSearch(f)).length
+              const hasMatches = matchingFileCount > 0
+
+              // Check if directory has ghost files
+              const ghostFileCount = dir.files.filter(f => f.isGhost).length
+              const hasGhostFiles = ghostFileCount > 0
+
+              const dirColor = getDirColor(i, hasMatches)
+
+              // Adjust radius for highlighted directories
+              const nodeRadius = hasMatches && searchActive ? 21 : 18
 
               return (
-                <g key={i}>
+                <g key={`dir-${dir.path}`}>
+                  {/* Glow effect for highlighted directories */}
+                  {hasMatches && searchActive && (
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={nodeRadius + 4}
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="2"
+                      opacity="0.3"
+                    />
+                  )}
+
+                  {/* Ghost files indicator */}
+                  {hasGhostFiles && !hasMatches && (
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={nodeRadius + 3}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.2)"
+                      strokeWidth="1"
+                      strokeDasharray="4 2"
+                    />
+                  )}
+
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={18}
+                    r={nodeRadius}
                     fill={dirColor}
-                    stroke={isExpanded ? 'white' : 'rgba(255,255,255,0.15)'}
-                    strokeWidth={isExpanded ? 2 : 1}
+                    stroke={isExpanded ? 'white' : 'rgba(255,255,255,0.3)'}
+                    strokeWidth={isExpanded ? 2 : 1.5}
                     className="chord-dir-node"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -742,9 +959,10 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
                       toggleDirectory(dir.path)
                     }}
                     onMouseEnter={handleNodeHover}
+                    style={hasMatches && searchActive ? { filter: 'brightness(1.2)' } : (hasGhostFiles ? { opacity: 0.7 } : {})}
                   />
 
-                  {/* File count in center */}
+                  {/* File count in center - show matches during search or ghost count */}
                   <text
                     x={node.x}
                     y={node.y}
@@ -755,16 +973,18 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
                     dominantBaseline="middle"
                     className="chord-text"
                   >
-                    {dir.files.length}
+                    {searchActive && matchingFileCount > 0 ? matchingFileCount :
+                     hasGhostFiles ? `${dir.files.length - ghostFileCount}/${dir.files.length}` :
+                     dir.files.length}
                   </text>
 
-                  {/* Directory name on outer side */}
+                  {/* Directory name on outer side - highlight if matches or has ghosts */}
                   <text
                     x={node.x + Math.cos(node.angle) * labelOffset}
                     y={node.y + Math.sin(node.angle) * labelOffset}
-                    fill="rgba(255,255,255,0.8)"
-                    fontSize="9"
-                    fontWeight="500"
+                    fill={hasMatches && searchActive ? '#fbbf24' : (hasGhostFiles ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.8)')}
+                    fontSize={hasMatches && searchActive ? '10' : '9'}
+                    fontWeight={hasMatches && searchActive ? '700' : '500'}
                     textAnchor="middle"
                     dominantBaseline="middle"
                     className="chord-text"
@@ -774,27 +994,62 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
                 </g>
               )
             } else if (node.type === 'file') {
+              const isGhost = node.data.isGhost || false
+              const fileMatches = fileMatchesSearch(node.data)
+              const fileColor = getFileColor(fileMatches && searchActive)
+              const fileRadius = (fileMatches && searchActive && !isGhost) ? 8 : 6
+
               return (
-                <g key={i}>
+                <g key={`file-${node.data.path}`}>
+                  {/* Glow for matching files */}
+                  {fileMatches && searchActive && !isGhost && (
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={fileRadius + 3}
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="1.5"
+                      opacity="0.4"
+                    />
+                  )}
+
+                  {/* Ghost file indicator - larger wireframe circle */}
+                  {isGhost && (
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={fileRadius + 2}
+                      fill="none"
+                      stroke={fileColor}
+                      strokeWidth="1"
+                      strokeDasharray="4 2"
+                      opacity="0.5"
+                    />
+                  )}
+
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={6}
-                    fill={getFileColor()}
-                    stroke="rgba(255,255,255,0.3)"
-                    strokeWidth="1"
+                    r={fileRadius}
+                    fill={isGhost ? 'transparent' : fileColor}
+                    stroke={isGhost ? fileColor : 'rgba(255,255,255,0.3)'}
+                    strokeWidth={isGhost ? 2 : 1.5}
+                    strokeDasharray={isGhost ? '3 2' : '0'}
+                    opacity={isGhost ? 0.5 : (fileMatches && searchActive ? 1 : 0.7)}
                     className="chord-file-node"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleNodeClick(node.data)
+                      if (!isGhost) handleNodeClick(node.data)
                     }}
                     onMouseEnter={handleNodeHover}
+                    style={isGhost ? { pointerEvents: 'none' } : {}}
                   />
                 </g>
               )
             } else if (node.type === 'more') {
               return (
-                <g key={i}>
+                <g key={`more-${node.data.dirPath}`}>
                   <circle
                     cx={node.x}
                     cy={node.y}
@@ -857,46 +1112,77 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
       description: 'Directory dependencies • Click to expand',
       render: renderChord,
       instructions: {
-        what: 'Displays directories as nodes in a circle, with colored connections showing parent-child and sibling relationships.',
-        how: '• Click directory nodes to expand their files (max 5 shown)\n• Scroll or use +/- buttons to zoom\n• Drag to pan around the diagram\n• Connection colors fade from one directory to another'
+        what: 'Displays directories as nodes in a circle, with colored connections showing parent-child and sibling relationships. Matching directories and files are highlighted during search.',
+        how: '• Click directory nodes to expand their files (max 5 shown)\n• Search to highlight matching directories/files in amber\n• Scroll or use +/- buttons to zoom\n• Drag to pan around the diagram\n• Connection colors fade from one directory to another'
       }
     }
   }
 
   const config = viewConfig[currentView] || viewConfig.grid
 
+  // Check if search is active and has results
+  const allFiles = getVisibleFiles()
+  const searchActive = searchQuery && searchQuery.trim() !== ''
+  const hasSearchResults = visibleFiles.length > 0
+
   return (
     <div className="visualization-area">
       <div className="visualization-container">
         <div className="visualization-header">
           <span className="visualization-icon">{config.icon}</span>
-          <h2 className="visualization-title">{config.title}</h2>
-          <p className="visualization-description">{config.description}</p>
+          <div className="visualization-title-section">
+            <h2 className="visualization-title">{config.title}</h2>
+            <p className="visualization-description">{config.description}</p>
+            {searchActive && (
+              <div className="search-indicator">
+                <span className="search-label">Filtering:</span>
+                <span className="search-query">"{searchQuery}"</span>
+                <span className="search-count">
+                  ({visibleFiles.length} of {allFiles.length} files)
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="visualization-content">
-          {config.render()}
+          {searchActive && !hasSearchResults ? (
+            <div className="no-search-results">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="20" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" fill="none"/>
+                <path d="M34 34L40 40" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M19 19C19 17.3431 20.3431 16 22 16H26C27.6569 16 29 17.3431 29 19V29H19V19Z" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <h3>No files found</h3>
+              <p>No files match "<strong>{searchQuery}</strong>"</p>
+              <p className="hint">Try a different search term</p>
+            </div>
+          ) : (
+            config.render()
+          )}
         </div>
 
-        {/* Visualization Info Box */}
-        {config.instructions && (
-          <div className="visualization-info-box">
-            <div className="info-box-header">
+        {/* Zoom Controls */}
+        <div className="zoom-controls">
+          <button
+            className={`zoom-button info-toggle ${showInfo ? 'active' : ''}`}
+            onClick={() => {
+              audioManager?.playClick()
+              setShowInfo(prev => !prev)
+            }}
+            title={showInfo ? 'Hide info' : 'Show info'}
+          >
+            {showInfo ? (
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
                 <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span className="info-box-title">What is this?</span>
-            </div>
-            <p className="info-box-what">{config.instructions.what}</p>
-            <div className="info-box-how-section">
-              <span className="info-box-how-title">How to use:</span>
-              <pre className="info-box-how">{config.instructions.how}</pre>
-            </div>
-          </div>
-        )}
-
-        {/* Zoom Controls */}
-        <div className="zoom-controls">
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            )}
+          </button>
           <button
             className="zoom-button"
             onClick={handleZoomOut}
@@ -935,6 +1221,24 @@ export function VisualizationArea({ currentView, files, onFileClick, audioManage
             )}
           </div>
         </div>
+
+        {/* Visualization Info Box */}
+        {showInfo && config.instructions && (
+          <div className="visualization-info-box">
+            <div className="info-box-header">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="info-box-title">What is this?</span>
+            </div>
+            <p className="info-box-what">{config.instructions.what}</p>
+            <div className="info-box-how-section">
+              <span className="info-box-how-title">How to use:</span>
+              <pre className="info-box-how">{config.instructions.how}</pre>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

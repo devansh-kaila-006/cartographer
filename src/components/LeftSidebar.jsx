@@ -2,12 +2,41 @@ import { useState, useMemo, useEffect } from 'react'
 import { ChevronRightIcon, ChevronDownIcon, SearchIcon, JavaScriptIcon, CSSIcon, JSONIcon, FileIcon } from './Icons'
 import './LeftSidebar.css'
 
-export function LeftSidebar({ files, onFileClick, selectedFile, audioManager }) {
-  const [searchQuery, setSearchQuery] = useState('')
+export function LeftSidebar({ files, onFileClick, selectedFile, audioManager, timelinePosition = 100, searchQuery, onSearchChange }) {
   const [collapsedFolders, setCollapsedFolders] = useState(new Set())
 
-  // Filter to only show files, not folders (folders are created from paths)
-  const displayFiles = files ? files.filter(f => f.type !== 'folder') : []
+  // Filter files based on timeline position
+  const getVisibleFiles = () => {
+    if (!files || files.length === 0) return []
+
+    // Get the date range from all files
+    const dates = files
+      .map(f => new Date(f.createdAt || Date.now()))
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a, b) => a - b)
+
+    if (dates.length === 0) return files
+
+    const minDate = dates[0]
+    const maxDate = dates[dates.length - 1]
+    const totalMs = maxDate.getTime() - minDate.getTime()
+
+    // Handle case where all files have the same date
+    if (totalMs === 0) {
+      return files
+    }
+
+    const currentMs = totalMs * (timelinePosition / 100)
+    const currentDate = new Date(minDate.getTime() + currentMs)
+
+    // Filter files that exist at or before the current timeline position
+    return files.filter(file => {
+      const fileDate = new Date(file.createdAt || Date.now())
+      return isNaN(fileDate.getTime()) || fileDate <= currentDate
+    })
+  }
+
+  const displayFiles = getVisibleFiles()
 
   // Filter files by search query
   const filteredFiles = useMemo(() => {
@@ -160,7 +189,7 @@ export function LeftSidebar({ files, onFileClick, selectedFile, audioManager }) 
           className="search-input"
           placeholder="Search files..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
 

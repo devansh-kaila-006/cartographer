@@ -182,6 +182,21 @@
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
+/* Keyboard Shortcuts Button */
+.shortcuts-button {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.shortcuts-button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.shortcuts-label {
+  font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .top-bar {

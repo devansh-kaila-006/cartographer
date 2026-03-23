@@ -6,14 +6,53 @@
 const GITHUB_API_BASE = 'https://api.github.com'
 
 /**
+ * Fetch commit history for a repository
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @param {number} perPage - Number of commits to fetch (default: 100)
+ * @returns {Promise<Array>} Array of commit objects
+ */
+export async function getCommitHistory(owner, repo, perPage = 100) {
+  try {
+    const response = await fetch(
+      `${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=${perPage}`
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch commits: ${response.status}`)
+    }
+
+    const commits = await response.json()
+
+    return commits.map(commit => ({
+      sha: commit.sha,
+      message: commit.commit.message,
+      date: commit.commit.committer.date,
+      author: commit.commit.author.name,
+    }))
+  } catch (error) {
+    console.error('Failed to fetch commit history:', error)
+    throw error
+  }
+}
+
+/**
  * Fetch file tree from a GitHub repository
  * @param {string} owner - Repository owner (e.g., 'facebook')
  * @param {string} repo - Repository name (e.g., 'react')
- * @returns {Promise<Array>} Array of file objects
+ * @returns {Promise<Object>} Object with files array and commits array
  */
 export async function getFileTree(owner, repo) {
   try {
-    // Try to get the directory tree first
+    // Fetch commits first to get file creation dates
+    let commits = []
+    try {
+      commits = await getCommitHistory(owner, repo, 100)
+    } catch (error) {
+      console.warn('Could not fetch commit history, continuing without it:', error)
+    }
+
+    // Try to get the directory tree
     const response = await fetch(
       `${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/HEAD?recursive=1`
     )
@@ -96,8 +135,27 @@ export async function getFileTree(owner, repo) {
         return codeExtensions.includes(ext) || configFiles.includes(name)
       })
       .slice(0, 400) // Limit to 400 files
-      .map(item => {
+      .map((item, index) => {
         const ext = item.path.split('.').pop().toLowerCase()
+
+        // Assign a creation date based on file position and commit history
+        // This creates a realistic timeline effect without needing individual file histories
+        let createdAt
+
+        if (commits && commits.length > 0) {
+          // Distribute files across the commit timeline
+          const commitIndex = Math.floor((index / 400) * commits.length)
+          const targetCommit = commits[Math.min(commitIndex, commits.length - 1)]
+          createdAt = targetCommit ? targetCommit.date : new Date().toISOString()
+        } else {
+          // No commits? Create a fake timeline spanning the last year
+          const now = new Date()
+          const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+          const progress = index / 400
+          const fileDate = new Date(oneYearAgo.getTime() + (now.getTime() - oneYearAgo.getTime()) * progress)
+          createdAt = fileDate.toISOString()
+        }
+
         return {
           path: item.path,
           name: item.path.split('/').pop(),
@@ -105,6 +163,7 @@ export async function getFileTree(owner, repo) {
           language: getLanguageFromExtension(ext),
           size: item.size || 0,
           sha: item.sha,
+          createdAt: createdAt,
         }
       })
 
@@ -112,7 +171,13 @@ export async function getFileTree(owner, repo) {
       throw new Error('No code files found in repository')
     }
 
-    return files
+    // Sort files by creation date
+    files.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+
+    return {
+      files,
+      commits,
+    }
   } catch (error) {
     console.error('Failed to fetch file tree:', error)
     throw error
@@ -227,4 +292,5 @@ export const githubAPI = {
   getFileTree,
   getFileContent,
   generateMockFiles,
+  getCommitHistory,
 }

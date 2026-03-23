@@ -57,6 +57,13 @@ export const AudioIcon = () => (
   </svg>
 )
 
+export const HelpIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+    <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+)
+
 // File Icons
 export const JavaScriptIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -150,5 +157,24 @@ export const CheckIcon = () => (
 export const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4 4L16 16M4 16L16 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+)
+
+// Timeline Icons
+export const PlayIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 3L12 8L5 13V3Z" fill="currentColor"/>
+  </svg>
+)
+
+export const PauseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 3H6V13H5V3ZM10 3H11V13H10V3Z" fill="currentColor"/>
+  </svg>
+)
+
+export const ResetIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M13.5 8C13.5 10.4853 11.4853 12.5 9 12.5C6.51472 12.5 4.5 10.4853 4.5 8C4.5 5.51472 6.51472 3.5 9 3.5C10.1256 3.5 11.1638 3.88639 11.9775 4.52246L10.5 6H14.5V2L13.207 3.29289C12.0655 2.16312 10.5809 1.5 9 1.5C5.68629 1.5 3 4.18629 3 7.5C3 10.8137 5.68629 13.5 9 13.5C12.3137 13.5 15 10.8137 15 7.5H13.5Z" fill="currentColor"/>
   </svg>
 )

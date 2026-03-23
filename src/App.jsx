@@ -6,6 +6,8 @@ import { VisualizationArea } from './components/VisualizationArea'
 import { FileInfoCard } from './components/FileInfoCard'
 import { SettingsModal } from './components/SettingsModal'
 import { AudioSettingsModal } from './components/AudioSettingsModal'
+import { Timeline } from './components/Timeline'
+import { KeyboardShortcuts } from './components/KeyboardShortcuts'
 import { githubAPI } from './api/github'
 import audioManager from './utils/audioManager'
 
@@ -29,6 +31,18 @@ function App() {
     soundEnabled: false,
     volume: 50
   })
+
+  // Timeline state
+  const [showTimeline, setShowTimeline] = useState(false)
+  const [timelinePosition, setTimelinePosition] = useState(100) // Percentage (0-100)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [commits, setCommits] = useState([])
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Keyboard shortcuts state
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
 
   // Load API keys from localStorage on mount
   useEffect(() => {
@@ -71,6 +85,109 @@ function App() {
     audioManager.setVolume(audioSettings.volume)
   }, [])
 
+  // Auto-play timeline
+  useEffect(() => {
+    if (!isPlaying) return
+
+    const interval = setInterval(() => {
+      setTimelinePosition(prev => {
+        if (prev >= 100) {
+          setIsPlaying(false)
+          return 100
+        }
+        return prev + 1
+      })
+    }, 100) // Update every 100ms
+
+    return () => clearInterval(interval)
+  }, [isPlaying])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input
+      const target = e.target
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return
+      }
+
+      const isModKey = e.metaKey || e.ctrlKey
+
+      // Cmd/Ctrl + F: Focus search
+      if (isModKey && e.key === 'f') {
+        e.preventDefault()
+        const searchInput = document.querySelector('.search-input')
+        if (searchInput) {
+          searchInput.focus()
+          searchInput.select()
+        }
+        audioManager?.playClick()
+      }
+
+      // Escape: Close modals and deselect file
+      if (e.key === 'Escape') {
+        if (showSettings) {
+          handleCloseSettings()
+        } else if (showAudioSettings) {
+          handleCloseAudioSettings()
+        } else if (selectedFile) {
+          setSelectedFile(null)
+          audioManager?.playClick()
+        }
+      }
+
+      // Space: Toggle timeline play/pause (only if timeline is visible)
+      if (e.key === ' ' && showTimeline && !selectedFile) {
+        e.preventDefault()
+        handleTogglePlay()
+      }
+
+      // 1, 2, 3: Switch views (Sunburst, Chord, Grid)
+      if (e.key === '1') {
+        handleViewChange('sunburst')
+        audioManager?.playClick()
+      }
+      if (e.key === '2') {
+        handleViewChange('chord')
+        audioManager?.playClick()
+      }
+      if (e.key === '3') {
+        handleViewChange('grid')
+        audioManager?.playClick()
+      }
+
+      // T: Toggle timeline
+      if (e.key === 't' || e.key === 'T') {
+        handleToggleTimeline()
+      }
+
+      // Cmd/Ctrl + ,: Open settings
+      if (isModKey && e.key === ',') {
+        e.preventDefault()
+        handleOpenSettings()
+        audioManager?.playClick()
+      }
+
+      // R: Reset view (when not typing)
+      if (e.key === 'r' || e.key === 'R') {
+        if (repoInfo) {
+          handleReset()
+          audioManager?.playClick()
+        }
+      }
+
+      // ?: Show keyboard shortcuts
+      if (e.key === '?') {
+        e.preventDefault()
+        setShowKeyboardShortcuts(true)
+        audioManager?.playClick()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showSettings, showAudioSettings, selectedFile, showTimeline, repoInfo])
+
   // Handle repository loading from landing page
   const handleLoadRepo = async (owner, repo) => {
     setIsLoading(true)
@@ -94,9 +211,13 @@ function App() {
 
       await new Promise(resolve => setTimeout(resolve, 600))
 
-      // Update state
+      // Update state - handle both old format (array) and new format (object with files and commits)
+      const fileList = Array.isArray(files) ? files : (files.files || [])
+      const commitList = Array.isArray(files) ? [] : (files.commits || [])
+
       setRepoInfo({ owner, repo })
-      setFiles(files)
+      setFiles(fileList)
+      setCommits(commitList)
 
       // Complete
       setLoadingProgress(100)
@@ -117,6 +238,35 @@ function App() {
     setCurrentView('sunburst')
     setSummaries(new Map())
     setFiles([])
+    setCommits([])
+    setTimelinePosition(100)
+    setIsPlaying(false)
+    setShowTimeline(false)
+  }
+
+  // Handle timeline position change
+  const handleTimelineChange = (position) => {
+    setTimelinePosition(position)
+    audioManager?.playClick()
+  }
+
+  // Handle timeline play/pause
+  const handleTogglePlay = () => {
+    setIsPlaying(prev => !prev)
+    audioManager?.playClick()
+  }
+
+  // Handle timeline reset
+  const handleResetTimeline = () => {
+    setTimelinePosition(100)
+    setIsPlaying(false)
+    audioManager?.playClick()
+  }
+
+  // Handle timeline toggle
+  const handleToggleTimeline = () => {
+    setShowTimeline(prev => !prev)
+    audioManager?.playClick()
   }
 
   // Handle view change
@@ -244,6 +394,7 @@ function App() {
             onReset={handleReset}
             onOpenSettings={handleOpenSettings}
             onOpenAudioSettings={handleOpenAudioSettings}
+            onShowShortcuts={() => setShowKeyboardShortcuts(true)}
             audioManager={audioManager}
           />
 
@@ -252,6 +403,9 @@ function App() {
             onFileClick={handleFileClick}
             selectedFile={selectedFile}
             audioManager={audioManager}
+            timelinePosition={timelinePosition}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
 
           <VisualizationArea
@@ -259,6 +413,8 @@ function App() {
             files={files}
             onFileClick={handleFileClick}
             audioManager={audioManager}
+            timelinePosition={timelinePosition}
+            searchQuery={searchQuery}
           />
 
           <FileInfoCard
@@ -273,6 +429,31 @@ function App() {
             hasApiKey={!!apiKeys.gemini}
           />
         </>
+      )}
+
+      {/* Timeline */}
+      {showTimeline && (
+        <Timeline
+          commits={commits}
+          position={timelinePosition}
+          onPositionChange={handleTimelineChange}
+          isPlaying={isPlaying}
+          onTogglePlay={handleTogglePlay}
+          onReset={handleResetTimeline}
+          audioManager={audioManager}
+          onClose={handleToggleTimeline}
+        />
+      )}
+
+      {/* Timeline Toggle Button */}
+      {repoInfo && (
+        <button
+          className="timeline-toggle"
+          onClick={handleToggleTimeline}
+          title={showTimeline ? 'Hide Timeline' : 'Show Timeline'}
+        >
+          {showTimeline ? '▼' : '▶'}
+        </button>
       )}
 
       {/* Settings Modal */}
@@ -293,6 +474,14 @@ function App() {
           volume={audioSettings.volume}
           onSave={handleSaveAudioSettings}
           onClose={handleCloseAudioSettings}
+          audioManager={audioManager}
+        />
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showKeyboardShortcuts && (
+        <KeyboardShortcuts
+          onClose={() => setShowKeyboardShortcuts(false)}
           audioManager={audioManager}
         />
       )}

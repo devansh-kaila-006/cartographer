@@ -276,18 +276,18 @@ meshes.forEach(mesh => {
 - [x] Add copy path button
 
 ### Phase 4: Timeline Fix (Critical)
-- [ ] Fix timeline to show ghost files
-- [ ] Prevent data loss on view switch
-- [ ] Add timeline toggle
-- [ ] Add play/pause functionality
-- [ ] Add date indicator
+- [x] Fix timeline to show ghost files
+- [x] Prevent data loss on view switch
+- [x] Add timeline toggle
+- [x] Add play/pause functionality
+- [x] Add date indicator
 
 ### Phase 5: Polish (Medium)
-- [ ] Add smooth transitions
-- [ ] Add loading states
-- [ ] Add keyboard shortcuts
-- [ ] Add tooltips
-- [ ] Test with sample repos
+- [x] Add smooth transitions
+- [x] Add loading states
+- [x] Add keyboard shortcuts
+- [x] Add tooltips
+- [x] Test with sample repos
 
 ## Success Criteria
 
