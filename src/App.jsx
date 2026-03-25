@@ -9,6 +9,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { AudioSettingsModal } from './components/AudioSettingsModal'
 import { Timeline } from './components/Timeline'
 import { KeyboardShortcuts } from './components/KeyboardShortcuts'
+import { QuickStatsPanel } from './components/QuickStatsPanel'
 import { githubAPI } from './api/github'
 import audioManager from './utils/audioManager'
 
@@ -45,6 +46,9 @@ function App() {
 
   // Keyboard shortcuts state
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+
+  // Quick stats state
+  const [showQuickStats, setShowQuickStats] = useState(false)
 
   // Load API keys from localStorage on mount
   useEffect(() => {
@@ -184,11 +188,18 @@ function App() {
         setShowKeyboardShortcuts(true)
         audioManager?.playClick()
       }
+
+      // I: Toggle quick stats panel
+      if (e.key === 'i' || e.key === 'I') {
+        if (repoInfo) {
+          handleToggleQuickStats()
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showSettings, showAudioSettings, selectedFile, showTimeline, repoInfo])
+  }, [showSettings, showAudioSettings, selectedFile, showTimeline, showQuickStats, repoInfo])
 
   // Handle repository loading from landing page
   const handleLoadRepo = async (owner, repo) => {
@@ -269,6 +280,17 @@ function App() {
   const handleToggleTimeline = () => {
     setShowTimeline(prev => !prev)
     audioManager?.playClick()
+  }
+
+  // Handle quick stats toggle
+  const handleToggleQuickStats = () => {
+    setShowQuickStats(prev => !prev)
+    audioManager?.playClick()
+  }
+
+  // Handle close quick stats
+  const handleCloseQuickStats = () => {
+    setShowQuickStats(false)
   }
 
   // Handle view change
@@ -554,6 +576,17 @@ function App() {
       {showKeyboardShortcuts && (
         <KeyboardShortcuts
           onClose={() => setShowKeyboardShortcuts(false)}
+          audioManager={audioManager}
+        />
+      )}
+
+      {/* Quick Stats Panel */}
+      {repoInfo && (
+        <QuickStatsPanel
+          files={files}
+          commits={commits}
+          visible={showQuickStats}
+          onClose={handleCloseQuickStats}
           audioManager={audioManager}
         />
       )}

@@ -9,9 +9,10 @@ export function KeyboardShortcuts({ onClose, audioManager }) {
     { key: '⌘/Ctrl + 0', description: 'Reset zoom' },
     { key: 'Space', description: 'Play/pause timeline' },
     { key: 'T', description: 'Toggle timeline' },
-    { key: 'I', description: 'Toggle info box' },
+    { key: 'I', description: 'Show repository statistics' },
     { key: 'R', description: 'Reset repository' },
     { key: '⌘/Ctrl + ,', description: 'Open settings' },
+    { key: '?', description: 'Show keyboard shortcuts' },
     { key: 'Escape', description: 'Close modals / Deselect file' },
   ]
 

@@ -6,6 +6,12 @@
 
 ## ✨ Features
 
+### 📊 Quick Statistics
+- **Repository Overview** - See total files, size, and top language at a glance
+- **Language Breakdown** - Visual distribution of all programming languages
+- **File Extensions** - Most common file types in the codebase
+- **Last Updated** - Repository activity timestamp
+
 ### 🎨 Three Visualization Modes
 - **Grid Heatmap** - See all files in a grid layout where cell size represents file size
 - **Sunburst** - Radial hierarchical view showing directory structure as nested rings
@@ -100,7 +106,13 @@ npm run preview
 - **Generate Summary** - Click "Generate AI Summary" (requires API key)
 - **View on GitHub** - Open the file directly on GitHub
 
-### 6. Configure Settings
+### 6. View Repository Statistics
+- **Press `I`** - Open the Quick Stats Panel
+- **See Overview** - View total files, size, top language, and last updated date
+- **Language Breakdown** - See distribution of programming languages
+- **File Extensions** - View most common file types
+
+### 7. Configure Settings
 - **API Keys** - Click settings icon → "API Keys"
 - **Audio** - Click settings icon → "Audio"
 - **Keyboard Shortcuts** - Press `?` or click "Shortcuts" button
@@ -117,7 +129,7 @@ npm run preview
 | `⌘/Ctrl + 0` | Reset zoom |
 | `Space` | Play/pause timeline |
 | `T` | Toggle timeline |
-| `I` | Toggle info box |
+| `I` | Show repository statistics |
 | `R` | Reset repository |
 | `⌘/Ctrl + ,` | Open settings |
 | `?` | Show keyboard shortcuts |
